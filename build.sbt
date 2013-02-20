@@ -13,4 +13,6 @@ libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-
 
 resolvers += "sonatype-snapshot" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
+publishTo := Some(Resolver.file("file",  new File(Path.userHome + "/.m2/repository")) )
+
 EclipseKeys.withSource := true
