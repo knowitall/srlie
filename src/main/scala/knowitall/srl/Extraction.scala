@@ -10,6 +10,7 @@ import edu.washington.cs.knowitall.tool.srl.Roles
 import edu.washington.cs.knowitall.collection.immutable.graph.Graph.Edge
 import edu.washington.cs.knowitall.collection.immutable.graph.DirectedEdge
 import edu.washington.cs.knowitall.collection.immutable.graph.Direction
+import edu.washington.cs.knowitall.tool.srl.Roles.R
 
 case class Extraction(relation: Relation, arguments: Seq[Argument]) {
   val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (arg.interval leftOf relation.interval)).getOrElse {
@@ -39,16 +40,18 @@ case class Extraction(relation: Relation, arguments: Seq[Argument]) {
   // an extraction is active if it's not passive
   def passive = !active
 }
-case class Sense(name: String, id: Int)
-abstract class ExtractionPart {
-  def text: String
-  def tokens: Seq[DependencyNode]
-  def interval: Interval
-}
-case class Argument(override val text: String, override val tokens: Seq[DependencyNode], override val interval: Interval, role: Role) extends ExtractionPart {
+case class Sense(name: String, id: String)
+class Argument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role) {
   override def toString = text
 }
-case class Relation(override val text: String, sense: Sense, override val tokens: Seq[DependencyNode], override val interval: Interval) extends ExtractionPart {
+
+class TemporalArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
+extends Argument(text, tokens, interval, role)
+
+class LocationArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
+extends Argument(text, tokens, interval, role)
+
+case class Relation(text: String, sense: Sense, tokens: Seq[DependencyNode], interval: Interval) {
   override def toString = text
 }
 object Relation {
@@ -88,13 +91,21 @@ object Extraction {
       Relation(text, Sense(frame.relation.name, frame.relation.sense), nodeSeq, frame.relation.node.indices)
     }
 
-    val boundaries = frame.arguments.map(_.node).toSet
-    println(frame)
-    println(boundaries)
-    val args = frame.arguments.map { arg =>
+    val boundaries = frame.arguments.map(_.node).toSet + frame.relation.node
+    val args = frame.arguments.filterNot { arg =>
+      arg.role match {
+        case _: Roles.R => true
+        case Roles.AM_MNR => true
+        case _ => false
+      }
+    }.map { arg =>
       val nodes = contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down, boundaries).sorted
       val text = dgraph.text.substring(nodes.head.interval.start, nodes.last.interval.end)
-      Argument(text, nodes.toSeq, Interval.span(nodes.map(_.indices)), arg.role)
+      arg.role match {
+        case Roles.AM_TMP => new TemporalArgument(text, nodes.toSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        case Roles.AM_LOC => new LocationArgument(text, nodes.toSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        case _ => new Argument(text, nodes.toSeq, Interval.span(nodes.map(_.indices)), arg.role)
+      }
     }
 
     Exception.catching(classOf[IllegalArgumentException]) opt Extraction(rel, args)
