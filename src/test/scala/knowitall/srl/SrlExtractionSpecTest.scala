@@ -10,8 +10,9 @@ import edu.washington.cs.knowitall.tool.parse.graph.DependencyGraph
 @RunWith(classOf[JUnitRunner])
 class SrlExtractionSpecTest extends Specification {
   val srl = new SrlExtractor()
-  val parser = new ClearParser()
+  // val parser = new ClearParser()
 
+  /*
   {
     val sentence = "John wants to fly to Boston this Thursday for a much needed vacation."
     sentence in {
@@ -84,6 +85,37 @@ class SrlExtractionSpecTest extends Specification {
 
       extrs.size must_== 2
       extrs.map(_.toString) must contain("(she; will not be; a tea trolley)")
+    }
+  }
+  */
+
+  {
+    val sentence = "John read a book in which philosophy was discussed."
+    ("extractions from: " + sentence) in {
+      val dgraph = DependencyGraph.deserialize("nsubj(read_VBD_1_5, John_NNP_0_0); dobj(read_VBD_1_5, book_NN_3_12); punct(read_VBD_1_5, ._._9_50); det(book_NN_3_12, a_DT_2_10); rcmod(book_NN_3_12, discussed_VBN_8_41); pcomp(in_IN_4_17, which_WDT_5_20); prep(discussed_VBN_8_41, in_IN_4_17); nsubjpass(discussed_VBN_8_41, philosophy_NN_6_26); auxpass(discussed_VBN_8_41, was_VBD_7_37)")
+      val frames = Seq("read_1.01:[A0=John_0, A1=book_3]", "discuss_8.01:[AM-LOC=book_3, R-AM-LOC=in_4, A1=philosophy_6]") map Frame.deserialize(dgraph)
+
+      val extrs = srl.synchronized {
+        srl.extract(dgraph)(frames)
+      }
+
+      extrs.size must_== 2
+      extrs.map(_.toString) must contain("(philosophy; was discussed; )")
+    }
+  }
+
+  {
+    val sentence = "John lives in Orlando."
+    ("extractions from: " + sentence) in {
+      val dgraph = DependencyGraph.deserialize("nsubj(lives_VBZ_1_5, John_NNP_0_0); prep(lives_VBZ_1_5, in_IN_2_11); punct(lives_VBZ_1_5, ._._4_21); pobj(in_IN_2_11, Orlando_NNP_3_14)")
+      val frames = Seq("live_1.01:[A0=John_0, AM-LOC=in_2]") map Frame.deserialize(dgraph)
+
+      val extrs = srl.synchronized {
+        srl.extract(dgraph)(frames)
+      }
+
+      extrs.size must_== 1
+      extrs.map(_.toString) must contain("(John; lives; L:in Orlando)")
     }
   }
 }

@@ -22,8 +22,7 @@ case class Extraction(relation: Relation, arguments: Seq[Argument]) {
   }
 
   override def toString = {
-
-    val parts = Iterable(arg1.text, relation.text, arg2s.iterator.map(_.text).mkString("; "))
+    val parts = Iterable(arg1.text, relation.text, arg2s.iterator.map(_.toString).mkString("; "))
     parts.mkString("(", "; ", ")")
   }
 
@@ -44,10 +43,14 @@ class Argument(val text: String, val tokens: Seq[DependencyNode], val interval: 
 }
 
 class TemporalArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
-extends Argument(text, tokens, interval, role)
+extends Argument(text, tokens, interval, role) {
+  override def toString = "T:" + super.toString
+}
 
 class LocationArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
-extends Argument(text, tokens, interval, role)
+extends Argument(text, tokens, interval, role) {
+  override def toString = "L:" + super.toString
+}
 
 case class Relation(text: String, sense: Sense, tokens: Seq[DependencyNode], interval: Interval) {
   override def toString = text
@@ -85,11 +88,11 @@ object Extraction {
   def fromFrame(dgraph: DependencyGraph)(frame: Frame): Option[Extraction] = {
     val args = frame.arguments.filterNot { arg =>
       arg.role match {
-        case _: Roles.R => true
         case Roles.AM_MNR => true
         case Roles.AM_MOD => true
         case Roles.AM_NEG => true
-        case x: Roles.C => true
+        case _: Roles.R => true
+        case _: Roles.C => true
         case _ => false
       }
     }
