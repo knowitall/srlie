@@ -1,6 +1,6 @@
 name := "openie-srl"
 
-organization := "edu.knowitall"
+organization := "edu.washington.cs.knowitall.openiesrl"
 
 version := "1.0-SNAPSHOT"
 
@@ -13,6 +13,14 @@ libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-
 
 resolvers += "sonatype-snapshot" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
-publishTo := Some(Resolver.file("file",  new File(Path.userHome + "/.m2/repository")) )
+publishMavenStyle := true
+
+publishTo <<= version { (v: String) =>
+  val nexus = "https://oss.sonatype.org/"
+  if (v.trim.endsWith("SNAPSHOT"))
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+}
 
 EclipseKeys.withSource := true

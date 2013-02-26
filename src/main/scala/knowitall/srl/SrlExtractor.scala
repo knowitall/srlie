@@ -8,11 +8,16 @@ import scala.util.control.Exception
 import java.io.File
 import edu.washington.cs.knowitall.common.Resource
 import edu.washington.cs.knowitall.tool.srl.FrameHierarchy
+import edu.washington.cs.knowitall.tool.srl.Frame
 
 class SrlExtractor(val srl: ClearSrl = new ClearSrl()) {
-  def apply(graph: DependencyGraph) = {
-    val frames = srl.apply(graph)
-    frames flatMap Extraction.fromFrame(graph)
+  def apply(dgraph: DependencyGraph): Seq[Extraction] = {
+    val frames = srl.apply(dgraph)
+    this.extract(dgraph)(frames)
+  }
+
+  def extract(dgraph: DependencyGraph)(frames: Seq[Frame]) = {
+    frames flatMap Extraction.fromFrame(dgraph)
   }
 }
 
