@@ -7,6 +7,7 @@ import edu.washington.cs.knowitall.tool.parse.graph.DependencyGraph
 import scala.util.control.Exception
 import java.io.File
 import edu.washington.cs.knowitall.common.Resource
+import edu.washington.cs.knowitall.tool.srl.FrameHierarchy
 
 class SrlExtractor(val srl: ClearSrl = new ClearSrl()) {
   def apply(graph: DependencyGraph) = {
@@ -55,7 +56,9 @@ object SrlExtractor extends App {
         val graph = graphify(line)
         println(graph.serialize)
         val frames = srl.apply(graph)
-        frames foreach println
+        frames.map(_.serialize) foreach println
+        val hierarchy = FrameHierarchy.fromFrames(graph, frames.toIndexedSeq)
+        hierarchy foreach println
 
         val extrs = frames flatMap Extraction.fromFrame(graph)
         extrs foreach println

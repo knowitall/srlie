@@ -21,8 +21,6 @@ case class Extraction(relation: Relation, arguments: Seq[Argument]) {
     arg.interval rightOf relation.interval
   }
 
-  require(!arg2s.isEmpty, "No arg2s")
-
   override def toString = {
 
     val parts = Iterable(arg1.text, relation.text, arg2s.iterator.map(_.text).mkString("; "))
@@ -84,21 +82,26 @@ object Extraction {
   }
 
   def fromFrame(dgraph: DependencyGraph)(frame: Frame): Option[Extraction] = {
+    val args = frame.arguments.filterNot { arg =>
+      arg.role match {
+        case _: Roles.R => true
+        case Roles.AM_MNR => true
+        case x: Roles.C => true
+        case _ => false
+      }
+    }
+
+    val boundaries = args.map(_.node).toSet + frame.relation.node
+
     val rel = {
-      val nodes = dgraph.graph.inferiors(frame.relation.node, edge => Relation.expansionLabels contains edge.label)
+      // sometimes we need detatched tokens: "John shouts profanities out loud."
+      val nodes = dgraph.graph.inferiors(frame.relation.node, edge => (Relation.expansionLabels contains edge.label) && !(boundaries contains edge.dest))
       val nodeSeq = nodes.toSeq.sorted
       val text = nodeSeq.iterator.map(_.text).mkString(" ")
       Relation(text, Sense(frame.relation.name, frame.relation.sense), nodeSeq, frame.relation.node.indices)
     }
 
-    val boundaries = frame.arguments.map(_.node).toSet + frame.relation.node
-    val args = frame.arguments.filterNot { arg =>
-      arg.role match {
-        case _: Roles.R => true
-        case Roles.AM_MNR => true
-        case _ => false
-      }
-    }.map { arg =>
+    val mappedArgs = args.map { arg =>
       val nodes = contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down, boundaries).sorted
       val text = dgraph.text.substring(nodes.head.interval.start, nodes.last.interval.end)
       arg.role match {
@@ -108,6 +111,6 @@ object Extraction {
       }
     }
 
-    Exception.catching(classOf[IllegalArgumentException]) opt Extraction(rel, args)
+    Exception.catching(classOf[IllegalArgumentException]) opt Extraction(rel, mappedArgs)
   }
 }
