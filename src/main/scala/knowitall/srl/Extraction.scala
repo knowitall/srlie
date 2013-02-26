@@ -103,7 +103,7 @@ object Extraction {
 
     val mappedArgs = args.map { arg =>
       val nodes = contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down, boundaries).sorted
-      val text = dgraph.text.substring(nodes.head.interval.start, nodes.last.interval.end)
+      val text = dgraph.text.substring(nodes.head.offsets.start, nodes.last.offsets.end)
       arg.role match {
         case Roles.AM_TMP => new TemporalArgument(text, nodes.toSeq, Interval.span(nodes.map(_.indices)), arg.role)
         case Roles.AM_LOC => new LocationArgument(text, nodes.toSeq, Interval.span(nodes.map(_.indices)), arg.role)
