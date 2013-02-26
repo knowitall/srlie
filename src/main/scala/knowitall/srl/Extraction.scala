@@ -81,11 +81,14 @@ object Extraction {
     expanded
   }
 
+  val forbiddenEdgeLabel = Seq("appos")
   def fromFrame(dgraph: DependencyGraph)(frame: Frame): Option[Extraction] = {
     val args = frame.arguments.filterNot { arg =>
       arg.role match {
         case _: Roles.R => true
         case Roles.AM_MNR => true
+        case Roles.AM_MOD => true
+        case Roles.AM_NEG => true
         case x: Roles.C => true
         case _ => false
       }
@@ -102,7 +105,7 @@ object Extraction {
     }
 
     val mappedArgs = args.map { arg =>
-      val nodes = contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down, boundaries).sorted
+      val nodes = contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down && !(forbiddenEdgeLabel contains dedge.edge.label), boundaries).sorted
       val text = dgraph.text.substring(nodes.head.offsets.start, nodes.last.offsets.end)
       arg.role match {
         case Roles.AM_TMP => new TemporalArgument(text, nodes.toSeq, Interval.span(nodes.map(_.indices)), arg.role)
