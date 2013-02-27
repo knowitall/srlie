@@ -17,7 +17,8 @@ class SrlExtractor(val srl: ClearSrl = new ClearSrl()) {
   }
 
   def extract(dgraph: DependencyGraph)(frames: Seq[Frame]) = {
-    frames flatMap Extraction.fromFrame(dgraph)
+    val hierarchy = FrameHierarchy.fromFrames(dgraph, frames).toSeq
+    hierarchy flatMap Extraction.fromFrameHierarchy(dgraph)
   }
 }
 

@@ -11,6 +11,7 @@ import edu.washington.cs.knowitall.collection.immutable.graph.Graph.Edge
 import edu.washington.cs.knowitall.collection.immutable.graph.DirectedEdge
 import edu.washington.cs.knowitall.collection.immutable.graph.Direction
 import edu.washington.cs.knowitall.tool.srl.Roles.R
+import edu.washington.cs.knowitall.tool.srl.FrameHierarchy
 
 case class Extraction(relation: Relation, arguments: Seq[Argument]) {
   val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (arg.interval leftOf relation.interval)).getOrElse {
@@ -43,24 +44,28 @@ class Argument(val text: String, val tokens: Seq[DependencyNode], val interval: 
 }
 
 class TemporalArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
-extends Argument(text, tokens, interval, role) {
+  extends Argument(text, tokens, interval, role) {
   override def toString = "T:" + super.toString
 }
 
 class LocationArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
-extends Argument(text, tokens, interval, role) {
+  extends Argument(text, tokens, interval, role) {
   override def toString = "L:" + super.toString
 }
 
 case class Relation(text: String, sense: Sense, tokens: Seq[DependencyNode], interval: Interval) {
   override def toString = text
+
+  def concat(other: Relation) = {
+    Relation(this.text + " " + other.text, other.sense, this.tokens ++ other.tokens, this.interval)
+  }
 }
 object Relation {
   val expansionLabels = Set("advmod", "neg", "aux", "cop", "auxpass", "prt", "acomp")
 }
 
 object Extraction {
-  def contiguousAdjacent(graph: DependencyGraph, node: DependencyNode, cond: DirectedEdge[DependencyNode]=>Boolean, until: Set[DependencyNode]) = {
+  def contiguousAdjacent(graph: DependencyGraph, node: DependencyNode, cond: DirectedEdge[DependencyNode] => Boolean, until: Set[DependencyNode]) = {
     def takeAdjacent(interval: Interval, nodes: List[DependencyNode], pool: List[DependencyNode]): List[DependencyNode] = pool match {
       // can we add the top node?
       case head :: tail if (head.indices borders interval) && !until.contains(head) =>
@@ -118,5 +123,24 @@ object Extraction {
     }
 
     Exception.catching(classOf[IllegalArgumentException]) opt Extraction(rel, mappedArgs)
+  }
+
+  def fromFrameHierarchy(dgraph: DependencyGraph)(frameh: FrameHierarchy): Seq[Extraction] = {
+    def rec(frameh: FrameHierarchy): Seq[Extraction] = {
+      if (frameh.children.isEmpty) Extraction.fromFrame(dgraph)(frameh.frame).toSeq
+      else {
+        Extraction.fromFrame(dgraph)(frameh.frame) match {
+          case Some(extr) =>
+            val subextrs = frameh.children flatMap rec
+
+            extr +: (subextrs map { subextr =>
+              new Extraction(extr.relation concat subextr.relation, subextr.arguments)
+            })
+          case None => Seq.empty
+        }
+      }
+    }
+
+    rec(frameh)
   }
 }

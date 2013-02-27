@@ -9,7 +9,7 @@ import edu.washington.cs.knowitall.tool.parse.graph.DependencyGraph
 
 @RunWith(classOf[JUnitRunner])
 class SrlExtractionSpecTest extends Specification {
-  val srl = new SrlExtractor()
+  val srl = new SrlExtractor(null)
   // val parser = new ClearParser()
 
   /*
@@ -116,6 +116,22 @@ class SrlExtractionSpecTest extends Specification {
 
       extrs.size must_== 1
       extrs.map(_.toString) must contain("(John; lives; L:in Orlando)")
+    }
+  }
+
+  {
+    val sentence = "John wants to blow his nose."
+    ("extractions from: " + sentence) in {
+      val dgraph = DependencyGraph.deserialize("nsubj(wants_VBZ_1_5, John_NNP_0_0); xcomp(wants_VBZ_1_5, blow_VB_3_14); punct(wants_VBZ_1_5, ._._6_27); aux(blow_VB_3_14, to_TO_2_11); dobj(blow_VB_3_14, nose_NN_5_23); poss(nose_NN_5_23, his_PRP$_4_19)")
+      val frames = Seq("want_1.01:[A0=John_0, A1=blow_3]", "blow_3.09:[A0=John_0, A1=nose_5]") map Frame.deserialize(dgraph)
+
+      val extrs = srl.synchronized {
+        srl.extract(dgraph)(frames)
+      }
+
+      println(extrs)
+      extrs.size must_== 2
+      extrs.map(_.toString) must haveTheSameElementsAs(Seq("(John; wants; to blow his nose)", "(John; wants to blow; his nose)"))
     }
   }
 }
