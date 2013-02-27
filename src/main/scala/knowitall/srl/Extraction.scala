@@ -12,14 +12,15 @@ import edu.washington.cs.knowitall.collection.immutable.graph.DirectedEdge
 import edu.washington.cs.knowitall.collection.immutable.graph.Direction
 import edu.washington.cs.knowitall.tool.srl.Roles.R
 import edu.washington.cs.knowitall.tool.srl.FrameHierarchy
+import edu.washington.cs.knowitall.collection.immutable.graph.UpEdge
 
 case class Extraction(relation: Relation, arguments: Seq[Argument]) {
-  val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (arg.interval leftOf relation.interval)).getOrElse {
+  val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (relation.intervals.forall(interval => arg.interval leftOf interval))).getOrElse {
     throw new IllegalArgumentException("Extraction has no arg1.")
   }
 
   val arg2s = arguments.filter { arg =>
-    arg.interval rightOf relation.interval
+    relation.intervals.forall(interval => arg.interval rightOf interval)
   }
 
   override def toString = {
@@ -53,11 +54,14 @@ class LocationArgument(text: String, tokens: Seq[DependencyNode], interval: Inte
   override def toString = "L:" + super.toString
 }
 
-case class Relation(text: String, sense: Sense, tokens: Seq[DependencyNode], interval: Interval) {
+case class Relation(text: String, sense: Option[Sense], tokens: Seq[DependencyNode], intervals: Seq[Interval]) {
+  // make sure all the intervals are disjoint
+  require(intervals.forall(x => !intervals.exists(y => x != y && (x intersects y))))
+
   override def toString = text
 
   def concat(other: Relation) = {
-    Relation(this.text + " " + other.text, other.sense, this.tokens ++ other.tokens, this.interval)
+    Relation(this.text + " " + other.text, None, this.tokens ++ other.tokens, this.intervals ++ other.intervals)
   }
 }
 object Relation {
@@ -107,18 +111,28 @@ object Extraction {
     val rel = {
       // sometimes we need detatched tokens: "John shouts profanities out loud."
       val nodes = dgraph.graph.inferiors(frame.relation.node, edge => (Relation.expansionLabels contains edge.label) && !(boundaries contains edge.dest))
-      val nodeSeq = nodes.toSeq.sorted
+      val remoteNodes = (
+          // expand to certain nodes connected by a conj edge
+          (dgraph.graph.superiors(frame.relation.node, edge => edge.label == "conj") - frame.relation.node) flatMap (node => dgraph.graph.inferiors(node, edge => edge.label == "aux" && edge.dest.text == "to") - node)
+        ).filter(_.index < frame.relation.node.index)
+      val nodeSeq = (remoteNodes ++ nodes).toSeq.sorted
       val text = nodeSeq.iterator.map(_.text).mkString(" ")
-      Relation(text, Sense(frame.relation.name, frame.relation.sense), nodeSeq, frame.relation.node.indices)
+      Relation(text, Some(Sense(frame.relation.name, frame.relation.sense)), nodeSeq, Seq(frame.relation.node.indices))
     }
 
     val mappedArgs = args.map { arg =>
-      val nodes = contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down && !(forbiddenEdgeLabel contains dedge.edge.label), boundaries).sorted
-      val text = dgraph.text.substring(nodes.head.offsets.start, nodes.last.offsets.end)
+      val nodes = (
+          // expand along certain contiguous nodes
+          contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down && !(forbiddenEdgeLabel contains dedge.edge.label), boundaries)
+        ).sorted
+
+      val text =
+        dgraph.text.substring(nodes.head.offsets.start, nodes.last.offsets.end)
+      val nodeSeq = nodes.toSeq
       arg.role match {
-        case Roles.AM_TMP => new TemporalArgument(text, nodes.toSeq, Interval.span(nodes.map(_.indices)), arg.role)
-        case Roles.AM_LOC => new LocationArgument(text, nodes.toSeq, Interval.span(nodes.map(_.indices)), arg.role)
-        case _ => new Argument(text, nodes.toSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        case Roles.AM_TMP => new TemporalArgument(text, nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        case Roles.AM_LOC => new LocationArgument(text, nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        case _ => new Argument(text, nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
       }
     }
 
