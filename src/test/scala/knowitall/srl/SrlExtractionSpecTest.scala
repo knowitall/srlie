@@ -150,4 +150,17 @@ class SrlExtractionSpecTest extends Specification {
       extrs.map(_.toString) must haveTheSameElementsAs(Seq("(John; wants; to blow his nose and eat corn)", "(John; wants to blow; his nose)", "(John; wants to eat; corn)"))
     }
   }
+
+  {
+    val sentence = "Meteorites are the oldest rocks found on Earth."
+    ("no errors with: '" + sentence + "'") in {
+      val dgraph = DependencyGraph.deserialize("nsubj(are_VBP_1_11, Meteorites_NNPS_0_0); attr(are_VBP_1_11, rocks_NNS_4_26); punct(are_VBP_1_11, ._._8_46); det(rocks_NNS_4_26, the_DT_2_15); amod(rocks_NNS_4_26, oldest_JJS_3_19); partmod(rocks_NNS_4_26, found_VBN_5_32); prep(found_VBN_5_32, on_IN_6_38); pobj(on_IN_6_38, Earth_NNP_7_41)")
+      val frames = IndexedSeq(
+        "be_1.01:[A1=Meteorites_0, A2=rocks_4]",
+        "bind_5.01:[A1=rocks_4, AM-LOC=on_6]") map Frame.deserialize(dgraph)
+      srl.synchronized {
+        srl.extract(dgraph)(frames) must not(throwA[Exception])
+      }
+    }
+  }
 }

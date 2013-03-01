@@ -147,8 +147,9 @@ object Extraction {
           case Some(extr) =>
             val subextrs = frameh.children flatMap rec
 
-            extr +: (subextrs map { subextr =>
-              new Extraction(extr.relation concat subextr.relation, subextr.arguments)
+            extr +: (subextrs flatMap { subextr =>
+              Exception.catching(classOf[IllegalArgumentException]) opt
+                new Extraction(extr.relation concat subextr.relation, subextr.arguments)
             })
           case None => Seq.empty
         }
