@@ -78,7 +78,7 @@ object Extraction {
       case _ => nodes
     }
 
-    val inferiors = graph.graph.connected(node, cond)
+    val inferiors = graph.graph.connected(node, dedge=>cond(dedge) && !(until contains dedge.end))
     val span = Interval.span(inferiors.map(_.indices))
     val contiguous = graph.nodes.drop(span.start).take(span.length).toList.sorted
 
