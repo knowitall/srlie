@@ -13,6 +13,7 @@ import edu.washington.cs.knowitall.collection.immutable.graph.Direction
 import edu.washington.cs.knowitall.tool.srl.Roles.R
 import edu.washington.cs.knowitall.tool.srl.FrameHierarchy
 import edu.washington.cs.knowitall.collection.immutable.graph.UpEdge
+import edu.washington.cs.knowitall.collection.immutable.graph.Graph
 
 case class Extraction(relation: Relation, arguments: Seq[Argument]) {
   val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (relation.intervals.forall(interval => arg.interval leftOf interval))).getOrElse {
@@ -93,7 +94,43 @@ object Extraction {
     expanded
   }
 
-  val forbiddenEdgeLabel = Seq("appos", "punct")
+  /**
+    *  Find all nodes in a components next to the node.
+    *  @param  node  components will be found adjacent to this node
+    *  @param  labels  components may be connected by edges with any of these labels
+    *  @param  without  components may not include any of these nodes
+    */
+  def components(graph: DependencyGraph, node: DependencyNode, labels: Set[String], without: Set[DependencyNode], nested: Boolean) = {
+    // nodes across an allowed label to a subcomponent
+    val across = graph.graph.neighbors(node, (dedge: DirectedEdge[_]) => dedge.dir match {
+      case Direction.Down if labels.contains(dedge.edge.label) => true
+      case _ => false
+    })
+
+    across.flatMap { start =>
+      // get inferiors without passing back to node
+      val inferiors = graph.graph.inferiors(start,
+        (e: Graph.Edge[DependencyNode]) =>
+          // don't cross a conjunction that goes back an across node
+          !((e.label startsWith "conj") && (across contains e.dest)) &&
+            // make sure we don't cycle out of the component
+            e.dest != node &&
+            // make sure we don't descend into another component
+            // i.e. "John M. Synge who came to us with his play direct
+            // from the Aran Islands , where the material for most of
+            // his later works was gathered" if nested is false
+            (nested || !labels.contains(e.label)))
+
+      // make sure none of the without nodes are in the component
+      if (without.forall(!inferiors.contains(_))) {
+        val span = Interval.span(inferiors.map(_.indices).toSeq)
+        Some(graph.nodes.filter(node => span.superset(node.indices)).toList)
+      } else None
+    }
+  }
+
+  val componentEdgeLabels = Set("rcmod", "infmod", "partmod", "ref", "prepc_of")
+  val forbiddenEdgeLabel = Set("appos", "punct") ++ componentEdgeLabels
   def fromFrame(dgraph: DependencyGraph)(frame: Frame): Option[Extraction] = {
     val args = frame.arguments.filterNot { arg =>
       arg.role match {
@@ -121,10 +158,16 @@ object Extraction {
     }
 
     val mappedArgs = args.map { arg =>
-      val nodes = (
+      val immediateNodes =
           // expand along certain contiguous nodes
           contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down && !(forbiddenEdgeLabel contains dedge.edge.label), boundaries)
-        ).sorted
+
+      val componentNodes =
+        if (immediateNodes.exists(_.isProperNoun)) Set.empty
+        else components(dgraph, arg.node, componentEdgeLabels, boundaries, false)
+
+      val nodeSpan = Interval.span(immediateNodes.map(_.tokenInterval) ++ componentNodes.map(_.tokenInterval))
+      val nodes = dgraph.nodes.slice(nodeSpan.start, nodeSpan.end)
 
       val text =
         dgraph.text.substring(nodes.head.offsets.start, nodes.last.offsets.end)
