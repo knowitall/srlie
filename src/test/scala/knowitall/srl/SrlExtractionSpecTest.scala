@@ -172,7 +172,7 @@ class SrlExtractionSpecTest extends Specification {
          "be_3.01:[A1=John_0, R-A1=who_2, A2=old_6]",
          "eat_8.01:[A0=John_0, A1=corn_9, AM-LOC=on_10]") map Frame.deserialize(dgraph)
       srl.synchronized {
-        srl.extract(dgraph)(frames).map(_.toString) must haveTheSameElementsAs(List("(John,; was; 5 years old)", "(John, who was 5 years old; ate; corn; L:on the cob)"))
+        srl.extract(dgraph)(frames).map(_.toString) must haveTheSameElementsAs(List("(John; was; 5 years old)", "(John, who was 5 years old; ate; corn; L:on the cob)"))
       }
     }
   }

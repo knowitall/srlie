@@ -93,7 +93,7 @@ object Extraction {
     expanded
   }
 
-  val forbiddenEdgeLabel = Seq("appos")
+  val forbiddenEdgeLabel = Seq("appos", "punct")
   def fromFrame(dgraph: DependencyGraph)(frame: Frame): Option[Extraction] = {
     val args = frame.arguments.filterNot { arg =>
       arg.role match {
