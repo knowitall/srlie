@@ -1,19 +1,19 @@
 package knowitall.srl
 
-import edu.washington.cs.knowitall.collection.immutable.Interval
+import edu.knowitall.collection.immutable.Interval
 import scala.util.control.Exception
-import edu.washington.cs.knowitall.tool.parse.graph.DependencyNode
-import edu.washington.cs.knowitall.tool.srl.Role
-import edu.washington.cs.knowitall.tool.srl.Frame
-import edu.washington.cs.knowitall.tool.parse.graph.DependencyGraph
-import edu.washington.cs.knowitall.tool.srl.Roles
-import edu.washington.cs.knowitall.collection.immutable.graph.Graph.Edge
-import edu.washington.cs.knowitall.collection.immutable.graph.DirectedEdge
-import edu.washington.cs.knowitall.collection.immutable.graph.Direction
-import edu.washington.cs.knowitall.tool.srl.Roles.R
-import edu.washington.cs.knowitall.tool.srl.FrameHierarchy
-import edu.washington.cs.knowitall.collection.immutable.graph.UpEdge
-import edu.washington.cs.knowitall.collection.immutable.graph.Graph
+import edu.knowitall.tool.parse.graph.DependencyNode
+import edu.knowitall.tool.srl.Role
+import edu.knowitall.tool.srl.Frame
+import edu.knowitall.tool.parse.graph.DependencyGraph
+import edu.knowitall.tool.srl.Roles
+import edu.knowitall.collection.immutable.graph.Graph.Edge
+import edu.knowitall.collection.immutable.graph.DirectedEdge
+import edu.knowitall.collection.immutable.graph.Direction
+import edu.knowitall.tool.srl.Roles.R
+import edu.knowitall.tool.srl.FrameHierarchy
+import edu.knowitall.collection.immutable.graph.UpEdge
+import edu.knowitall.collection.immutable.graph.Graph
 
 case class Extraction(relation: Relation, arguments: Seq[Argument]) {
   val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (relation.intervals.forall(interval => arg.interval leftOf interval))).getOrElse {

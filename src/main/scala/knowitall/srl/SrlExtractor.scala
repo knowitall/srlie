@@ -1,14 +1,14 @@
 package knowitall.srl
 
 import scala.io.Source
-import edu.washington.cs.knowitall.tool.parse.ClearParser
-import edu.washington.cs.knowitall.tool.srl.ClearSrl
-import edu.washington.cs.knowitall.tool.parse.graph.DependencyGraph
+import edu.knowitall.tool.parse.ClearParser
+import edu.knowitall.tool.srl.ClearSrl
+import edu.knowitall.tool.parse.graph.DependencyGraph
 import scala.util.control.Exception
 import java.io.File
-import edu.washington.cs.knowitall.common.Resource
-import edu.washington.cs.knowitall.tool.srl.FrameHierarchy
-import edu.washington.cs.knowitall.tool.srl.Frame
+import edu.knowitall.common.Resource
+import edu.knowitall.tool.srl.FrameHierarchy
+import edu.knowitall.tool.srl.Frame
 
 class SrlExtractor(val srl: ClearSrl = new ClearSrl()) {
   def apply(dgraph: DependencyGraph): Seq[Extraction] = {

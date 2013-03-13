@@ -3,9 +3,9 @@ package knowitall.srl
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
 import org.specs2.runner.JUnitRunner
-import edu.washington.cs.knowitall.tool.parse.ClearParser
-import edu.washington.cs.knowitall.tool.srl.Frame
-import edu.washington.cs.knowitall.tool.parse.graph.DependencyGraph
+import edu.knowitall.tool.parse.ClearParser
+import edu.knowitall.tool.srl.Frame
+import edu.knowitall.tool.parse.graph.DependencyGraph
 
 @RunWith(classOf[JUnitRunner])
 class SrlExtractionSpecTest extends Specification {
