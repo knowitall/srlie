@@ -15,7 +15,7 @@ import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.collection.immutable.graph.UpEdge
 import edu.knowitall.collection.immutable.graph.Graph
 
-case class Extraction(relation: Relation, arguments: Seq[Argument]) {
+case class Extraction(relation: Relation, arguments: Seq[Argument], negated: Boolean) {
   val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (relation.intervals.forall(interval => arg.interval leftOf interval))).getOrElse {
     throw new IllegalArgumentException("Extraction has no arg1.")
   }
@@ -137,11 +137,15 @@ object Extraction {
         case Roles.AM_MNR => true
         case Roles.AM_MOD => true
         case Roles.AM_NEG => true
+        case Roles.AM_ADV => true
         case _: Roles.R => true
         case _: Roles.C => true
         case _ => false
       }
     }
+
+    // context information
+    val negated = frame.arguments.find(_.role == Roles.AM_NEG).isDefined
 
     val boundaries = args.map(_.node).toSet + frame.relation.node
 
@@ -179,7 +183,7 @@ object Extraction {
       }
     }
 
-    Exception.catching(classOf[IllegalArgumentException]) opt Extraction(rel, mappedArgs)
+    Exception.catching(classOf[IllegalArgumentException]) opt Extraction(rel, mappedArgs, negated)
   }
 
   def fromFrameHierarchy(dgraph: DependencyGraph)(frameh: FrameHierarchy): Seq[Extraction] = {
@@ -192,7 +196,7 @@ object Extraction {
 
             extr +: (subextrs flatMap { subextr =>
               Exception.catching(classOf[IllegalArgumentException]) opt
-                new Extraction(extr.relation concat subextr.relation, subextr.arguments)
+                new Extraction(extr.relation concat subextr.relation, subextr.arguments, extr.negated)
             })
           case None => Seq.empty
         }
