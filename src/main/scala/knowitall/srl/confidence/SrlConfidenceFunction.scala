@@ -6,12 +6,8 @@ import edu.knowitall.tool.conf.FeatureSet
 import java.net.URL
 import knowitall.srl.SrlExtractionInstance
 
-class ConfidenceFunction {
-
-}
-
-object ConfidenceFunction {
-  val logger = LoggerFactory.getLogger(classOf[ConfidenceFunction])
+object SrlConfidenceFunction {
+  val logger = LoggerFactory.getLogger(classOf[SrlConfidenceFunction])
 
   type SrlConfidenceFunction = LogisticRegression[SrlExtractionInstance]
 
@@ -22,7 +18,7 @@ object ConfidenceFunction {
   def loadDefaultClassifier(): SrlConfidenceFunction = {
     fromUrl(SrlFeatureSet, defaultModelUrl)
   }
-   
+
   def fromUrl(featureSet: FeatureSet[SrlExtractionInstance, Double], url: URL): SrlConfidenceFunction = {
     LogisticRegression.fromUrl(featureSet, url)
   }
