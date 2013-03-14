@@ -1,10 +1,10 @@
-package knowitall.srl.confidence
+package edu.knowitall.srl.confidence
 
 import org.slf4j.LoggerFactory
 import edu.knowitall.tool.conf.impl.LogisticRegression
 import edu.knowitall.tool.conf.FeatureSet
 import java.net.URL
-import knowitall.srl.SrlExtractionInstance
+import edu.knowitall.srl.SrlExtractionInstance
 
 object SrlConfidenceFunction {
   val logger = LoggerFactory.getLogger(classOf[SrlConfidenceFunction])

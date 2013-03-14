@@ -1,11 +1,11 @@
-package knowitall.srl.confidence
+package edu.knowitall.srl.confidence
 
 import edu.knowitall.tool.conf.FeatureSet
 import edu.knowitall.tool.conf.Feature
-import knowitall.srl.SrlExtractionInstance
+import edu.knowitall.srl.SrlExtractionInstance
 import scala.collection.immutable.SortedMap
 import edu.knowitall.tool.srl.FrameHierarchy
-import knowitall.srl.SrlExtraction.Part
+import edu.knowitall.srl.SrlExtraction.Part
 import java.util.regex.Pattern
 import java.util.regex.Pattern
 

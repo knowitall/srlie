@@ -1,4 +1,4 @@
-package knowitall.srl
+package edu.knowitall.srl
 
 import scala.io.Source
 import edu.knowitall.tool.parse.ClearParser

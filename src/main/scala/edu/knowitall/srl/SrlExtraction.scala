@@ -1,4 +1,4 @@
-package knowitall.srl
+package edu.knowitall.srl
 
 import edu.knowitall.collection.immutable.Interval
 import scala.util.control.Exception
@@ -14,7 +14,7 @@ import edu.knowitall.tool.srl.Roles.R
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.collection.immutable.graph.UpEdge
 import edu.knowitall.collection.immutable.graph.Graph
-import knowitall.srl.SrlExtraction._
+import edu.knowitall.srl.SrlExtraction._
 
 case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: Boolean) {
   val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (relation.intervals.forall(interval => arg.interval leftOf interval))).getOrElse {
