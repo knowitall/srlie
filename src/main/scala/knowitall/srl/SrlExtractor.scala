@@ -11,14 +11,14 @@ import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.srl.Frame
 
 class SrlExtractor(val srl: ClearSrl = new ClearSrl()) {
-  def apply(dgraph: DependencyGraph): Seq[Extraction] = {
+  def apply(dgraph: DependencyGraph): Seq[SrlExtraction] = {
     val frames = srl.apply(dgraph)
     this.extract(dgraph)(frames)
   }
 
   def extract(dgraph: DependencyGraph)(frames: Seq[Frame]) = {
     val hierarchy = FrameHierarchy.fromFrames(dgraph, frames).toSeq
-    hierarchy flatMap Extraction.fromFrameHierarchy(dgraph)
+    hierarchy flatMap SrlExtraction.fromFrameHierarchy(dgraph)
   }
 }
 
@@ -66,7 +66,7 @@ object SrlExtractor extends App {
         val hierarchy = FrameHierarchy.fromFrames(graph, frames.toIndexedSeq)
         hierarchy foreach println
 
-        val extrs = frames flatMap Extraction.fromFrame(graph)
+        val extrs = frames flatMap SrlExtraction.fromFrame(graph)
         extrs foreach println
       }
     }
