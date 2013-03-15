@@ -183,8 +183,10 @@ object SrlExtraction {
     val boundaries = args.map(_.node).toSet + frame.relation.node
 
     val rel = {
-      // sometimes we need detatched tokens: "John shouts profanities out loud."
-      val nodes = dgraph.graph.inferiors(frame.relation.node, edge => (Relation.expansionLabels contains edge.label) && !(boundaries contains edge.dest))
+      // sometimes we need detached tokens: "John shouts profanities out loud."
+      val nodes = dgraph.graph.inferiors(frame.relation.node, edge => (Relation.expansionLabels contains edge.label) && !(boundaries contains edge.dest)) ++
+        // sometimes we need to go up a pcomp
+        dgraph.graph.predecessors(frame.relation.node, edge => edge.label == "pcomp")
       val remoteNodes = (
         // expand to certain nodes connected by a conj edge
         (dgraph.graph.superiors(frame.relation.node, edge => edge.label == "conj") - frame.relation.node) flatMap (node => dgraph.graph.inferiors(node, edge => edge.label == "aux" && edge.dest.text == "to") - node)).filter(_.index < frame.relation.node.index)

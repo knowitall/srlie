@@ -190,4 +190,21 @@ class SrlExtractionSpecTest extends Specification {
       }
     }
   }
+
+  def expectedExtractions(sentence: String, dgraphString: String, frameStrings: Seq[String], expectedExtractions: Seq[String]) = {
+    ("no errors with: '" + sentence + "'") in {
+      val dgraph = DependencyGraph.deserialize(dgraphString)
+      val frames = frameStrings map Frame.deserialize(dgraph)
+      srl.synchronized {
+        val extrs = srl.extract(dgraph)(frames)
+        extrs.map(_.toString) must haveTheSameElementsAs(expectedExtractions)
+      }
+    }
+  }
+
+  expectedExtractions(
+      sentence = "Microsoft plans on filing a lawsuit against Google in New York.",
+      dgraphString = "nsubj(plans_VBZ_1_10, Microsoft_NNP_0_0); prep(plans_VBZ_1_10, on_IN_2_16); punct(plans_VBZ_1_10, ._._11_62); pcomp(on_IN_2_16, filing_VBG_3_19); dobj(filing_VBG_3_19, lawsuit_NN_5_28); det(lawsuit_NN_5_28, a_DT_4_26); prep(lawsuit_NN_5_28, against_IN_6_36); pobj(against_IN_6_36, Google_NNP_7_44); prep(Google_NNP_7_44, in_IN_8_51); pobj(in_IN_8_51, York_NNP_10_58); nn(York_NNP_10_58, New_NNP_9_54)",
+      frameStrings = Seq("plan_1.01:[A0=Microsoft_0, A1=on_2]", "file_3.01:[A0=Microsoft_0, A1=lawsuit_5, A3=against_6]"),
+      expectedExtractions = Seq("(Microsoft; plans; on filing a lawsuit against Google in New York)", "(Microsoft; plans on filing; a lawsuit; against Google in New York)"))
 }
