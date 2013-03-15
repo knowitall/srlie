@@ -57,6 +57,7 @@ class SrlExtractionSpecTest extends Specification {
       target.get.active must beFalse
     }
   }
+  */
 
   {
     val sentence = "Alcohol is a drug, a sedative, which depresses the central nervous system"
@@ -69,7 +70,7 @@ class SrlExtractionSpecTest extends Specification {
       }
 
       extrs.size must_== 2
-      extrs.map(_.toString) must haveTheSameElementsAs(Seq("(Alcohol; is; a drug,)", "(a sedative,; depresses; the central nervous system)"))
+      extrs.map(_.toString) must haveTheSameElementsAs(Seq("(Alcohol; is; a drug)", "(a sedative; depresses; the central nervous system)"))
     }
   }
 
@@ -87,7 +88,6 @@ class SrlExtractionSpecTest extends Specification {
       extrs.map(_.toString) must contain("(she; will not be; a tea trolley)")
     }
   }
-  */
 
   {
     val sentence = "John read a book in which philosophy was discussed."
@@ -173,6 +173,20 @@ class SrlExtractionSpecTest extends Specification {
          "eat_8.01:[A0=John_0, A1=corn_9, AM-LOC=on_10]") map Frame.deserialize(dgraph)
       srl.synchronized {
         srl.extract(dgraph)(frames).map(_.toString) must haveTheSameElementsAs(List("(John; was; 5 years old)", "(John; ate; corn; L:on the cob)"))
+      }
+    }
+  }
+
+  {
+    val sentence = "NJ threw the ball to Michae on Friday after work."
+    ("no errors with: '" + sentence + "'") in {
+      val dgraph = DependencyGraph.deserialize("nsubj(threw_VBD_1_3, NJ_NNP_0_0); dobj(threw_VBD_1_3, ball_NN_3_13); prep(threw_VBD_1_3, to_TO_4_18); prep(threw_VBD_1_3, on_IN_6_28); prep(threw_VBD_1_3, after_IN_8_38); punct(threw_VBD_1_3, ._._10_48); det(ball_NN_3_13, the_DT_2_9); pobj(to_TO_4_18, Michae_NNP_5_21); pobj(on_IN_6_28, Friday_NNP_7_31); pobj(after_IN_8_38, work_NN_9_44)")
+      val frames = IndexedSeq(
+         "throw_1.01:[A0=NJ_0, A1=ball_3, A2=to_4, AM-TMP=on_6, AM-TMP=after_8]") map Frame.deserialize(dgraph)
+      srl.synchronized {
+        val extrs = srl.extract(dgraph)(frames)
+        extrs.flatMap(_.triplize(true)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw the ball; to Michae)", "(NJ; threw the ball; T:on Friday)", "(NJ; threw the ball; T:after work)"))
+        extrs.flatMap(_.triplize(false)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw; the ball)", "(NJ; threw; to Michae)", "(NJ; threw; T:on Friday)", "(NJ; threw; T:after work)"))
       }
     }
   }

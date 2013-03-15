@@ -25,6 +25,28 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
     relation.intervals.forall(interval => arg.interval rightOf interval)
   }
 
+  def triplize(includeDobj: Boolean = true) = {
+    val relArg =
+      if (this.active && includeDobj) arg2s.find(_.role == Roles.A1)
+      else if (this.passive && includeDobj) arg2s.find(_.role == Roles.A2)
+      else None
+
+    val filteredArg2s = (arg2s filterNot (arg2 => relArg.exists(_ == arg2)))
+    if (filteredArg2s.isEmpty) {
+      Seq(this)
+    }
+    else {
+      filteredArg2s.map { arg2 =>
+        val args = arguments filterNot (arg => arg != arg2 && arg2s.contains(arg)) filterNot (arg => relArg.exists(_ == arg))
+        val rel = relArg match {
+          case Some(relArg) => relation.copy(text=relation.text + " " + relArg.text, tokens=relation.tokens ++ relArg.tokens, intervals=relation.intervals :+ relArg.interval)
+          case None => relation
+        }
+        new SrlExtraction(rel, args, negated)
+      }
+    }
+  }
+
   override def toString = {
     val parts = Iterable(arg1.text, relation.text, arg2s.iterator.map(_.toString).mkString("; "))
     parts.mkString("(", "; ", ")")

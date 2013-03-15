@@ -61,13 +61,22 @@ object SrlExtractor extends App {
       for (line <- source.getLines) {
         val graph = graphify(line)
         println(graph.serialize)
+
+        println("frames:")
         val frames = srl.apply(graph)
         frames.map(_.serialize) foreach println
+
+        println("hierarchy:")
         val hierarchy = FrameHierarchy.fromFrames(graph, frames.toIndexedSeq)
         hierarchy foreach println
 
+        println("extractions:")
         val extrs = frames flatMap SrlExtraction.fromFrame(graph)
         extrs foreach println
+
+        println("triples:")
+        val triples = extrs flatMap (_.triplize(true))
+        triples foreach println
       }
     }
   }
