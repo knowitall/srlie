@@ -21,6 +21,8 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
     throw new IllegalArgumentException("Extraction has no arg1.")
   }
 
+  def rel = relation
+
   val arg2s = arguments.filter { arg =>
     relation.intervals.forall(interval => arg.interval rightOf interval)
   }

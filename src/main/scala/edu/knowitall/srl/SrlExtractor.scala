@@ -11,19 +11,36 @@ import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.srl.Frame
 
 class SrlExtractor(val srl: ClearSrl = new ClearSrl()) {
-  def apply(dgraph: DependencyGraph): Seq[SrlExtraction] = {
+  def apply(dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
     val frames = srl.apply(dgraph)
     this.extract(dgraph)(frames)
   }
 
   def extract(dgraph: DependencyGraph)(frames: Seq[Frame]) = {
     val hierarchy = FrameHierarchy.fromFrames(dgraph, frames).toSeq
-    hierarchy flatMap SrlExtraction.fromFrameHierarchy(dgraph)
+    hierarchy.flatMap { hierarchy =>
+      val extrs = SrlExtraction.fromFrameHierarchy(dgraph)(hierarchy)
+      extrs.map { extr => SrlExtractionInstance(extr, hierarchy, dgraph) }
+    }
   }
 }
 
 object SrlExtractor extends App {
-  case class Config(inputFile: Option[File] = None) {
+  sealed abstract class OutputFormat
+  object OutputFormat {
+    def apply(format: String): OutputFormat = {
+      format match {
+        case "standard" => Standard
+        case "annotation" => Annotation
+        case _ => throw new IllegalArgumentException("Unknown output format: " + format)
+      }
+    }
+
+    case object Standard extends OutputFormat
+    case object Annotation extends OutputFormat
+  }
+
+  case class Config(inputFile: Option[File] = None, outputFormat: OutputFormat = OutputFormat.Standard, gold: Map[String, Boolean] = Map.empty) {
     def source() = {
       inputFile match {
         case Some(file) => Source.fromFile(file)
@@ -36,8 +53,25 @@ object SrlExtractor extends App {
     def options = Seq(
       argOpt("input file", "input file") { (string, config) =>
         val file = new File(string)
-        require(file.exists, "file does not exist: " + file)
+        require(file.exists, "input file does not exist: " + file)
         config.copy(inputFile = Some(file))
+      },
+      opt("gold", "gold file") { (string, config) =>
+        val file = new File(string)
+        require(file.exists, "gold file does not exist: " + file)
+        val gold = Resource.using (Source.fromFile(file)) { source =>
+          (for {
+            line <- source.getLines
+            Array(annotation, string, _ @ _*) = line.split("\t")
+            boolean = if (annotation == "1") true else false
+          } yield {
+            string -> boolean
+          }).toMap
+        }
+        config.copy(gold = gold)
+      },
+      opt("format", "output format: {standard, annotation}") { (string, config) =>
+        config.copy(outputFormat = OutputFormat(string))
       })
   }
 
@@ -60,23 +94,31 @@ object SrlExtractor extends App {
     Resource.using(config.source()) { source =>
       for (line <- source.getLines) {
         val graph = graphify(line)
-        println(graph.serialize)
-
-        println("frames:")
         val frames = srl.apply(graph)
-        frames.map(_.serialize) foreach println
-
-        println("hierarchy:")
         val hierarchy = FrameHierarchy.fromFrames(graph, frames.toIndexedSeq)
-        hierarchy foreach println
-
-        println("extractions:")
         val extrs = frames flatMap SrlExtraction.fromFrame(graph)
-        extrs foreach println
-
-        println("triples:")
         val triples = extrs flatMap (_.triplize(true))
-        triples foreach println
+
+        if (config.outputFormat == OutputFormat.Standard) {
+          println(graph.serialize)
+
+          println("frames:")
+          frames.map(_.serialize) foreach println
+
+          println("hierarchy:")
+          hierarchy foreach println
+
+          println("extractions:")
+          extrs foreach println
+
+          println("triples:")
+          triples foreach println
+        }
+        else if (config.outputFormat == OutputFormat.Annotation) {
+          for (extr <- triples) {
+            println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), extr.toString, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+          }
+        }
       }
     }
   }

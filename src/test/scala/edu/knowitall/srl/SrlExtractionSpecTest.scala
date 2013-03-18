@@ -66,7 +66,7 @@ class SrlExtractionSpecTest extends Specification {
       val frames = Seq("be_1.01:[A1=Alcohol_0, A2=drug_3]", "depress_9.02:[A0=sedative_6, R=which_8, A1=system_13]") map Frame.deserialize(dgraph)
 
       val extrs = srl.synchronized {
-        srl.extract(dgraph)(frames)
+        srl.extract(dgraph)(frames).map(_.extr)
       }
 
       extrs.size must_== 2
@@ -81,7 +81,7 @@ class SrlExtractionSpecTest extends Specification {
       val frames = Seq("have_2.03:[A0=Grandma_1, A1=wheels_3]", "be_8.01:[AM-ADV=had_2, A1=she_5, AM-MOD=will_6, AM-NEG=not_7, A2=trolley_11]") map Frame.deserialize(dgraph)
 
       val extrs = srl.synchronized {
-        srl.extract(dgraph)(frames)
+        srl.extract(dgraph)(frames).map(_.extr)
       }
 
       extrs.size must_== 2
@@ -96,7 +96,7 @@ class SrlExtractionSpecTest extends Specification {
       val frames = Seq("read_1.01:[A0=John_0, A1=book_3]", "discuss_8.01:[AM-LOC=book_3, R-AM-LOC=in_4, A1=philosophy_6]") map Frame.deserialize(dgraph)
 
       val extrs = srl.synchronized {
-        srl.extract(dgraph)(frames)
+        srl.extract(dgraph)(frames).map(_.extr)
       }
 
       extrs.size must_== 2
@@ -111,7 +111,7 @@ class SrlExtractionSpecTest extends Specification {
       val frames = Seq("live_1.01:[A0=John_0, AM-LOC=in_2]") map Frame.deserialize(dgraph)
 
       val extrs = srl.synchronized {
-        srl.extract(dgraph)(frames)
+        srl.extract(dgraph)(frames).map(_.extr)
       }
 
       extrs.size must_== 1
@@ -126,7 +126,7 @@ class SrlExtractionSpecTest extends Specification {
       val frames = Seq("want_1.01:[A0=John_0, A1=blow_3]", "blow_3.09:[A0=John_0, A1=nose_5]") map Frame.deserialize(dgraph)
 
       val extrs = srl.synchronized {
-        srl.extract(dgraph)(frames)
+        srl.extract(dgraph)(frames).map(_.extr)
       }
 
       extrs.size must_== 2
@@ -144,7 +144,7 @@ class SrlExtractionSpecTest extends Specification {
         "eat_7.01:[A0=John_0, A1=corn_8]") map Frame.deserialize(dgraph)
 
       val extrs = srl.synchronized {
-        srl.extract(dgraph)(frames)
+        srl.extract(dgraph)(frames).map(_.extr)
       }
 
       extrs.map(_.toString) must haveTheSameElementsAs(Seq("(John; wants; to blow his nose and eat corn)", "(John; wants to blow; his nose)", "(John; wants to eat; corn)"))
@@ -159,7 +159,7 @@ class SrlExtractionSpecTest extends Specification {
         "be_1.01:[A1=Meteorites_0, A2=rocks_4]",
         "bind_5.01:[A1=rocks_4, AM-LOC=on_6]") map Frame.deserialize(dgraph)
       srl.synchronized {
-        srl.extract(dgraph)(frames) must not(throwA[Exception])
+        srl.extract(dgraph)(frames).map(_.extr) must not(throwA[Exception])
       }
     }
   }
@@ -172,7 +172,7 @@ class SrlExtractionSpecTest extends Specification {
          "be_3.01:[A1=John_0, R-A1=who_2, A2=old_6]",
          "eat_8.01:[A0=John_0, A1=corn_9, AM-LOC=on_10]") map Frame.deserialize(dgraph)
       srl.synchronized {
-        srl.extract(dgraph)(frames).map(_.toString) must haveTheSameElementsAs(List("(John; was; 5 years old)", "(John; ate; corn; L:on the cob)"))
+        srl.extract(dgraph)(frames).map(_.extr).map(_.toString) must haveTheSameElementsAs(List("(John; was; 5 years old)", "(John; ate; corn; L:on the cob)"))
       }
     }
   }
@@ -184,7 +184,7 @@ class SrlExtractionSpecTest extends Specification {
       val frames = IndexedSeq(
          "throw_1.01:[A0=NJ_0, A1=ball_3, A2=to_4, AM-TMP=on_6, AM-TMP=after_8]") map Frame.deserialize(dgraph)
       srl.synchronized {
-        val extrs = srl.extract(dgraph)(frames)
+        val extrs = srl.extract(dgraph)(frames).map(_.extr)
         extrs.flatMap(_.triplize(true)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw the ball; to Michae)", "(NJ; threw the ball; T:on Friday)", "(NJ; threw the ball; T:after work)"))
         extrs.flatMap(_.triplize(false)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw; the ball)", "(NJ; threw; to Michae)", "(NJ; threw; T:on Friday)", "(NJ; threw; T:after work)"))
       }
@@ -196,7 +196,7 @@ class SrlExtractionSpecTest extends Specification {
       val dgraph = DependencyGraph.deserialize(dgraphString)
       val frames = frameStrings map Frame.deserialize(dgraph)
       srl.synchronized {
-        val extrs = srl.extract(dgraph)(frames)
+        val extrs = srl.extract(dgraph)(frames).map(_.extr)
         extrs.map(_.toString) must haveTheSameElementsAs(expectedExtractions)
       }
     }

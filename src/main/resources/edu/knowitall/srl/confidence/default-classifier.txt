@@ -1,0 +1,18 @@
+at least one arg2 contains a pronoun	-0.22769131629986844
+hierarchical frames	-0.25894116755565527
+intransitive extraction	0.0
+arg1 contains a pronoun	-0.0
+arg1 is proper	0.4291300398523324
+Intercept	-0.11289478734327621
+nary extraction	0.0
+an arg2 contains > 10 tokens	0.03443915126460292
+arg1 appears before rel in sentence	-0.11289478734327621
+arg1 contains > 10 tokens	0.05606738930470014
+< 2 frame arguments	-0.0
+all arg2s appear after rel in sentence	-0.11289478734327621
+arg1 contains bad characters	-0.1789029423181032
+rel contains > 10 tokens	0.0
+> 2 frame arguments	0.3836702794163835
+at least one arg2 is proper	0.22957620004039672
+rel contains verb	0.7666823623246116
+rel contains bad characters	0.3791133094576089
