@@ -167,13 +167,12 @@ object SrlExtraction {
   val componentEdgeLabels = Set("rcmod", "infmod", "partmod", "ref", "prepc_of")
   val forbiddenEdgeLabel = Set("appos", "punct") ++ componentEdgeLabels
   def fromFrame(dgraph: DependencyGraph)(frame: Frame): Option[SrlExtraction] = {
-    val args = frame.arguments.filterNot { arg =>
+    val argsNotBoundaries = frame.arguments.filterNot { arg =>
       arg.role match {
         case Roles.AM_MNR => true
         case Roles.AM_MOD => true
         case Roles.AM_NEG => true
         case Roles.AM_ADV => true
-        case _: Roles.R => true
         case _: Roles.C => true
         case _ => false
       }
@@ -182,7 +181,14 @@ object SrlExtraction {
     // context information
     val negated = frame.arguments.find(_.role == Roles.AM_NEG).isDefined
 
-    val boundaries = args.map(_.node).toSet + frame.relation.node
+    val boundaries = argsNotBoundaries.map(_.node).toSet + frame.relation.node
+
+    val args = argsNotBoundaries.filterNot { arg =>
+      arg.role match {
+        case _: Roles.R => true
+        case _ => false
+      }
+    }
 
     val rel = {
       // sometimes we need detached tokens: "John shouts profanities out loud."

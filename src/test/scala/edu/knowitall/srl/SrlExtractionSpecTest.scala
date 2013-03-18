@@ -203,8 +203,14 @@ class SrlExtractionSpecTest extends Specification {
   }
 
   expectedExtractions(
-      sentence = "Microsoft plans on filing a lawsuit against Google in New York.",
-      dgraphString = "nsubj(plans_VBZ_1_10, Microsoft_NNP_0_0); prep(plans_VBZ_1_10, on_IN_2_16); punct(plans_VBZ_1_10, ._._11_62); pcomp(on_IN_2_16, filing_VBG_3_19); dobj(filing_VBG_3_19, lawsuit_NN_5_28); det(lawsuit_NN_5_28, a_DT_4_26); prep(lawsuit_NN_5_28, against_IN_6_36); pobj(against_IN_6_36, Google_NNP_7_44); prep(Google_NNP_7_44, in_IN_8_51); pobj(in_IN_8_51, York_NNP_10_58); nn(York_NNP_10_58, New_NNP_9_54)",
-      frameStrings = Seq("plan_1.01:[A0=Microsoft_0, A1=on_2]", "file_3.01:[A0=Microsoft_0, A1=lawsuit_5, A3=against_6]"),
-      expectedExtractions = Seq("(Microsoft; plans; on filing a lawsuit against Google in New York)", "(Microsoft; plans on filing; a lawsuit; against Google in New York)"))
+    sentence = "Microsoft plans on filing a lawsuit against Google in New York.",
+    dgraphString = "nsubj(plans_VBZ_1_10, Microsoft_NNP_0_0); prep(plans_VBZ_1_10, on_IN_2_16); punct(plans_VBZ_1_10, ._._11_62); pcomp(on_IN_2_16, filing_VBG_3_19); dobj(filing_VBG_3_19, lawsuit_NN_5_28); det(lawsuit_NN_5_28, a_DT_4_26); prep(lawsuit_NN_5_28, against_IN_6_36); pobj(against_IN_6_36, Google_NNP_7_44); prep(Google_NNP_7_44, in_IN_8_51); pobj(in_IN_8_51, York_NNP_10_58); nn(York_NNP_10_58, New_NNP_9_54)",
+    frameStrings = Seq("plan_1.01:[A0=Microsoft_0, A1=on_2]", "file_3.01:[A0=Microsoft_0, A1=lawsuit_5, A3=against_6]"),
+    expectedExtractions = Seq("(Microsoft; plans; on filing a lawsuit against Google in New York)", "(Microsoft; plans on filing; a lawsuit; against Google in New York)"))
+
+  expectedExtractions(
+    sentence = "That mis-characterizes when Shark said he loves ham.",
+    dgraphString = """nsubj(characterizes_VBZ_3_9, That_DT_0_0); hmod(characterizes_VBZ_3_9, mis_NN_1_5); hyph(characterizes_VBZ_3_9, -_HYPH_2_8); advcl(characterizes_VBZ_3_9, said_VBD_6_34); punct(characterizes_VBZ_3_9, ._._10_51); advmod(said_VBD_6_34, when_WRB_4_23); nsubj(said_VBD_6_34, Shark_NNP_5_28); ccomp(said_VBD_6_34, loves_VBZ_8_42); nsubj(loves_VBZ_8_42, he_PRP_7_39); dobj(loves_VBZ_8_42, ham_NN_9_48)""",
+    frameStrings = Seq("characterize_3.01:[A0=That_0, AM-TMP=said_6]", "say_6.01:[R-AM-TMP=when_4, A0=Shark_5, A1=loves_8]", "love_8.01:[A0=he_7, A1=ham_9]"),
+    expectedExtractions = Seq("(That; characterizes; T:when Shark said he loves ham)", "(Shark; said; he loves ham)", "(he; loves; ham)"))
 }
