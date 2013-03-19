@@ -168,7 +168,7 @@ object SrlExtraction {
     }
   }
 
-  val componentEdgeLabels = Set("rcmod", "infmod", "partmod", "ref", "prepc_of")
+  val componentEdgeLabels = Set("rcmod", "infmod", "partmod", "ref", "prepc_of", "advcl")
   val forbiddenEdgeLabel = Set("appos", "punct") ++ componentEdgeLabels
   def fromFrame(dgraph: DependencyGraph)(frame: Frame): Option[SrlExtraction] = {
     val argsNotBoundaries = frame.arguments.filterNot { arg =>
