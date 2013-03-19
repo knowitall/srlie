@@ -53,15 +53,17 @@ object SrlFeatures {
     }
   }
 
-  object arg1ContainsPronoun extends SrlFeature("arg1 contains a pronoun") {
+  object arg1ContainsPronoun extends SrlFeature("arg1 contains a pronoun, that, or EX") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg1.tokens.exists(_.isPronoun)
+      inst.extr.arg1.tokens.exists(tok => tok.isPronoun || tok.postag == "EX") ||
+        inst.extr.arg1.tokens.forall(tok => (tok.string equalsIgnoreCase "that") || (tok.string equalsIgnoreCase "ive"))
     }
   }
 
-  object arg2ContainsPronoun extends SrlFeature("at least one arg2 contains a pronoun") {
+  object arg2ContainsPronoun extends SrlFeature("at least one arg2 contains a pronoun, that, or EX") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg2s.exists(_.tokens.exists(_.isPronoun))
+      inst.extr.arg2s.exists(_.tokens.exists(tok => tok.isPronoun || tok.postag == "EX")) ||
+        inst.extr.arg1.tokens.forall(tok => (tok.string equalsIgnoreCase "that") || (tok.string equalsIgnoreCase "ive"))
     }
   }
 
