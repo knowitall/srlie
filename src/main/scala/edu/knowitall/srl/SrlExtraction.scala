@@ -29,7 +29,7 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
 
   def triplize(includeDobj: Boolean = true) = {
     val relArg =
-      if (this.active && includeDobj) arg2s.find(_.role == Roles.A1)
+      if (this.active && includeDobj) arg2s.find(arg2 => arg2.role == Roles.A1 || arg2.role == Roles.A2)
       else if (this.passive && includeDobj) arg2s.find(_.role == Roles.A2)
       else None
 

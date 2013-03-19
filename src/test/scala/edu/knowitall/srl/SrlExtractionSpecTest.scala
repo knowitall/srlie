@@ -202,6 +202,17 @@ class SrlExtractionSpecTest extends Specification {
     }
   }
 
+  def expectedTriples(sentence: String, dgraphString: String, frameStrings: Seq[String], expectedTriples: Seq[String]) = {
+    ("no errors with: '" + sentence + "'") in {
+      val dgraph = DependencyGraph.deserialize(dgraphString)
+      val frames = frameStrings map Frame.deserialize(dgraph)
+      srl.synchronized {
+        val triples = srl.extract(dgraph)(frames).flatMap(_.extr.triplize())
+        triples.map(_.toString) must haveTheSameElementsAs(expectedTriples)
+      }
+    }
+  }
+
   expectedExtractions(
     sentence = "Microsoft plans on filing a lawsuit against Google in New York.",
     dgraphString = "nsubj(plans_VBZ_1_10, Microsoft_NNP_0_0); prep(plans_VBZ_1_10, on_IN_2_16); punct(plans_VBZ_1_10, ._._11_62); pcomp(on_IN_2_16, filing_VBG_3_19); dobj(filing_VBG_3_19, lawsuit_NN_5_28); det(lawsuit_NN_5_28, a_DT_4_26); prep(lawsuit_NN_5_28, against_IN_6_36); pobj(against_IN_6_36, Google_NNP_7_44); prep(Google_NNP_7_44, in_IN_8_51); pobj(in_IN_8_51, York_NNP_10_58); nn(York_NNP_10_58, New_NNP_9_54)",
@@ -224,4 +235,16 @@ class SrlExtractionSpecTest extends Specification {
       "save_19.02:[A1=disciples_17, A2=from_20]"),
     expectedExtractions = Seq("(It; was; only when Jesus was in the boat and shouted , Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee)",
       "(Jesus; shouted; Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee)"))
+
+  expectedTriples(
+      sentence = "The president asked Americans to imagine the suicide terrorists who attacked the United States if they had been armed by Iraq .",
+    dgraphString = "det(president_NN_1_4, The_DT_0_0); nsubj(asked_VBD_2_14, president_NN_1_4); dobj(asked_VBD_2_14, Americans_NNPS_3_20); xcomp(asked_VBD_2_14, imagine_VB_5_33); punct(asked_VBD_2_14, ._._21_126); aux(imagine_VB_5_33, to_TO_4_30); dobj(imagine_VB_5_33, terrorists_NNS_8_53); det(terrorists_NNS_8_53, the_DT_6_41); nn(terrorists_NNS_8_53, suicide_NN_7_45); rcmod(terrorists_NNS_8_53, attacked_VBD_10_68); nsubj(attacked_VBD_10_68, who_WP_9_64); dobj(attacked_VBD_10_68, States_NNP_13_88); advcl(attacked_VBD_10_68, armed_VBN_18_112); det(States_NNP_13_88, the_DT_11_77); nn(States_NNP_13_88, United_NNP_12_81); mark(armed_VBN_18_112, if_IN_14_95); nsubjpass(armed_VBN_18_112, they_PRP_15_98); aux(armed_VBN_18_112, had_VBD_16_103); auxpass(armed_VBN_18_112, been_VBN_17_107); agent(armed_VBN_18_112, by_IN_19_118); pobj(by_IN_19_118, Iraq_NNP_20_121)",
+    frameStrings = Seq("ask_2.02:[A0=president_1, A2=Americans_3, A1=imagine_5]",
+      "imagine_5.01:[A0=Americans_3, A1=terrorists_8]",
+      "attack_10.01:[A0=terrorists_8, R-A0=who_9, A1=States_13, AM-ADV=armed_18]",
+      "arm_18.01:[A1=they_15, A0=by_19]"),
+    expectedTriples = Seq("(The president; asked Americans; to imagine the suicide terrorists)",
+      "(Americans; to imagine; the suicide terrorists who attacked the United States)",
+      "(the suicide terrorists; attacked; the United States)",
+      "(they; had been armed; by Iraq)"))
 }
