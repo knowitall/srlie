@@ -41,7 +41,10 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
       filteredArg2s.map { arg2 =>
         val args = arguments filterNot (arg => arg != arg2 && arg2s.contains(arg)) filterNot (arg => relArg.exists(_ == arg))
         val rel = relArg match {
-          case Some(relArg) => relation.copy(text=relation.text + " " + relArg.text, tokens=relation.tokens ++ relArg.tokens, intervals=relation.intervals :+ relArg.interval)
+          case Some(relArg) =>
+            val tokens = (relation.tokens ++ relArg.tokens).sortBy(_.interval)
+            val text = tokens.iterator.map(_.text).mkString(" ")
+            relation.copy(text=text, tokens=tokens, intervals=relation.intervals :+ relArg.interval)
           case None => relation
         }
         new SrlExtraction(rel, args, negated)
