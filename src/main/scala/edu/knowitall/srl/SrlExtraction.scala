@@ -59,7 +59,7 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
 
   // an extraction is active if A0 is the first A*
   def active = {
-    arguments.find(_.role.label startsWith "A") match {
+    arguments.find(_.role.label matches "A\\d+") match {
       case Some(node) => node.role == Roles.A0
       case None => false
     }
