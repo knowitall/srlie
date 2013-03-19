@@ -213,4 +213,15 @@ class SrlExtractionSpecTest extends Specification {
     dgraphString = """nsubj(characterizes_VBZ_3_9, That_DT_0_0); hmod(characterizes_VBZ_3_9, mis_NN_1_5); hyph(characterizes_VBZ_3_9, -_HYPH_2_8); advcl(characterizes_VBZ_3_9, said_VBD_6_34); punct(characterizes_VBZ_3_9, ._._10_51); advmod(said_VBD_6_34, when_WRB_4_23); nsubj(said_VBD_6_34, Shark_NNP_5_28); ccomp(said_VBD_6_34, loves_VBZ_8_42); nsubj(loves_VBZ_8_42, he_PRP_7_39); dobj(loves_VBZ_8_42, ham_NN_9_48)""",
     frameStrings = Seq("characterize_3.01:[A0=That_0, AM-TMP=said_6]", "say_6.01:[R-AM-TMP=when_4, A0=Shark_5, A1=loves_8]", "love_8.01:[A0=he_7, A1=ham_9]"),
     expectedExtractions = Seq("(That; characterizes; T:when Shark said he loves ham)", "(Shark; said; he loves ham)", "(he; loves; ham)"))
+
+  expectedExtractions(
+    sentence = "It was only when Jesus was in the boat and shouted , Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee .",
+    dgraphString = "nsubj(was_VBD_1_3, It_PRP_0_0); advcl(was_VBD_1_3, was_VBD_5_23); punct(was_VBD_1_3, ._._29_145); advmod(was_VBD_5_23, when_WRB_3_12); nsubj(was_VBD_5_23, Jesus_NNP_4_17); prep(was_VBD_5_23, in_IN_6_27); cc(was_VBD_5_23, and_CC_9_39); conj(was_VBD_5_23, shouted_VBD_10_43); pobj(in_IN_6_27, boat_NN_8_34); det(boat_NN_8_34, the_DT_7_30); punct(shouted_VBD_10_43, ,_,_11_51); ccomp(shouted_VBD_10_43, be_VB_13_59); advmod(be_VB_13_59, only_RB_2_7); nsubj(be_VB_13_59, Peace_NN_12_53); advmod(be_VB_13_59, still_RB_14_62); ccomp(be_VB_13_59, saved_VBN_19_92); det(disciples_NNS_17_77, the_DT_16_73); complm(saved_VBN_19_92, that_IN_15_68); nsubjpass(saved_VBN_19_92, disciples_NNS_17_77); auxpass(saved_VBN_19_92, were_VBD_18_87); prep(saved_VBN_19_92, from_IN_20_98); pobj(from_IN_20_98, storm_NN_23_117); det(storm_NN_23_117, that_DT_21_103); amod(storm_NN_23_117, terrible_JJ_22_108); prep(storm_NN_23_117, on_IN_24_123); pobj(on_IN_24_123, Sea_NNP_26_130); det(Sea_NNP_26_130, the_DT_25_126); prep(Sea_NNP_26_130, of_IN_27_134); pobj(of_IN_27_134, Galilee_NNP_28_137)",
+    frameStrings = Seq("be_1.01:[A1=It_0, A2=was_5]",
+      "be_5.01:[R-AM-TMP=when_3, A1=Jesus_4, A2=in_6]",
+      "shout_10.01:[R-AM-TMP=when_3, A0=Jesus_4, A1=be_13]",
+      "be_13.01:[AM-ADV=only_2, A1=Peace_12, AM-TMP=still_14, A2=saved_19]",
+      "save_19.02:[A1=disciples_17, A2=from_20]"),
+    expectedExtractions = Seq("(It; was; only when Jesus was in the boat and shouted , Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee)",
+      "(Jesus; shouted; Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee)"))
 }

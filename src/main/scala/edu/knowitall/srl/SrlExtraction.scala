@@ -127,9 +127,10 @@ object SrlExtraction {
 
     // take adjacent nodes from each list
     val withLefts = takeAdjacent(node.indices, List(node), lefts)
-    val expanded = takeAdjacent(node.indices, withLefts, rights)
+    val expanded = takeAdjacent(node.indices, withLefts, rights).sortBy(_.indices)
 
-    expanded
+    // only take items that are inferiors
+    expanded.slice(expanded.indexWhere(inferiors contains _), 1 + expanded.lastIndexWhere(inferiors contains _))
   }
 
   /**
@@ -211,7 +212,7 @@ object SrlExtraction {
         // expand along certain contiguous nodes
         contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down && !(forbiddenEdgeLabel contains dedge.edge.label), boundaries)
 
-      val componentNodes =
+      val componentNodes: Set[List[DependencyNode]] =
         if (immediateNodes.exists(_.isProperNoun)) Set.empty
         else components(dgraph, arg.node, componentEdgeLabels, boundaries, false)
 
