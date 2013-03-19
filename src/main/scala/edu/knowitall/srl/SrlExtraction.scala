@@ -27,7 +27,7 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
     relation.intervals.forall(interval => arg.interval rightOf interval)
   }
 
-  def triplize(includeDobj: Boolean = true) = {
+  def triplize(includeDobj: Boolean = true): Seq[SrlExtraction] = {
     val relArg =
       if (this.active && includeDobj) arg2s.find(arg2 => arg2.role == Roles.A1 || arg2.role == Roles.A2)
       else if (this.passive && includeDobj) arg2s.find(_.role == Roles.A2)
@@ -38,7 +38,7 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
       Seq(this)
     }
     else {
-      filteredArg2s.map { arg2 =>
+      val extrs = filteredArg2s.map { arg2 =>
         val args = arguments filterNot (arg => arg != arg2 && arg2s.contains(arg)) filterNot (arg => relArg.exists(_ == arg))
         val rel = relArg match {
           case Some(relArg) =>
@@ -49,6 +49,10 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
         }
         new SrlExtraction(rel, args, negated)
       }
+
+      // don't include dobj if we create any intransitives
+      if (extrs exists (_.intransitive)) this.triplize(false)
+      else extrs
     }
   }
 
