@@ -1,7 +1,7 @@
-at least one arg2 contains a pronoun	-0.22769131629986844
+at least one arg2 contains a pronoun, that, or EX	-0.22769131629986844
 hierarchical frames	-0.25894116755565527
 intransitive extraction	0.0
-arg1 contains a pronoun	-0.0
+arg1 contains a pronoun, that, or EX	-0.0
 arg1 is proper	0.4291300398523324
 Intercept	-0.11289478734327621
 nary extraction	0.0
