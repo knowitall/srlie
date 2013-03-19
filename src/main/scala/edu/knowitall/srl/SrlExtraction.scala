@@ -57,16 +57,18 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
     parts.mkString("(", "; ", ")")
   }
 
+  def intransitive = arg2s.isEmpty
+
   // an extraction is active if A0 is the first A*
   def active = {
-    arguments.find(_.role.label matches "A\\d+") match {
+    !intransitive && (arguments.find(_.role.label matches "A\\d+") match {
       case Some(node) => node.role == Roles.A0
       case None => false
-    }
+    })
   }
 
   // an extraction is active if it's not passive
-  def passive = !active
+  def passive = !intransitive && !active
 }
 
 object SrlExtraction {
