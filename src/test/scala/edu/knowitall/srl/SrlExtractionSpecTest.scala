@@ -10,6 +10,29 @@ import edu.knowitall.tool.parse.graph.DependencyGraph
 @RunWith(classOf[JUnitRunner])
 class SrlExtractionSpecTest extends Specification {
   val srl = new SrlExtractor(null)
+
+  def expectedExtractions(sentence: String, dgraphString: String, frameStrings: Seq[String], expectedExtractions: Seq[String]) = {
+    ("no errors with: '" + sentence + "'") in {
+      val dgraph = DependencyGraph.deserialize(dgraphString)
+      val frames = frameStrings map Frame.deserialize(dgraph)
+      srl.synchronized {
+        val extrs = srl.extract(dgraph)(frames).map(_.extr)
+        extrs.map(_.toString) must haveTheSameElementsAs(expectedExtractions)
+      }
+    }
+  }
+
+  def expectedTriples(sentence: String, dgraphString: String, frameStrings: Seq[String], expectedTriples: Seq[String]) = {
+    ("no errors with: '" + sentence + "'") in {
+      val dgraph = DependencyGraph.deserialize(dgraphString)
+      val frames = frameStrings map Frame.deserialize(dgraph)
+      srl.synchronized {
+        val triples = srl.extract(dgraph)(frames).flatMap(_.extr.triplize())
+        triples.map(_.toString) must haveTheSameElementsAs(expectedTriples)
+      }
+    }
+  }
+
   // val parser = new ClearParser()
 
   /*
@@ -100,7 +123,7 @@ class SrlExtractionSpecTest extends Specification {
       }
 
       extrs.size must_== 2
-      extrs.map(_.toString) must contain("(philosophy; was discussed; )")
+      extrs.map(_.toString) must contain("(philosophy; was discussed; L:a book)")
     }
   }
 
@@ -191,28 +214,6 @@ class SrlExtractionSpecTest extends Specification {
     }
   }
 
-  def expectedExtractions(sentence: String, dgraphString: String, frameStrings: Seq[String], expectedExtractions: Seq[String]) = {
-    ("no errors with: '" + sentence + "'") in {
-      val dgraph = DependencyGraph.deserialize(dgraphString)
-      val frames = frameStrings map Frame.deserialize(dgraph)
-      srl.synchronized {
-        val extrs = srl.extract(dgraph)(frames).map(_.extr)
-        extrs.map(_.toString) must haveTheSameElementsAs(expectedExtractions)
-      }
-    }
-  }
-
-  def expectedTriples(sentence: String, dgraphString: String, frameStrings: Seq[String], expectedTriples: Seq[String]) = {
-    ("no errors with: '" + sentence + "'") in {
-      val dgraph = DependencyGraph.deserialize(dgraphString)
-      val frames = frameStrings map Frame.deserialize(dgraph)
-      srl.synchronized {
-        val triples = srl.extract(dgraph)(frames).flatMap(_.extr.triplize())
-        triples.map(_.toString) must haveTheSameElementsAs(expectedTriples)
-      }
-    }
-  }
-
   expectedExtractions(
     sentence = "Microsoft plans on filing a lawsuit against Google in New York.",
     dgraphString = "nsubj(plans_VBZ_1_10, Microsoft_NNP_0_0); prep(plans_VBZ_1_10, on_IN_2_16); punct(plans_VBZ_1_10, ._._11_62); pcomp(on_IN_2_16, filing_VBG_3_19); dobj(filing_VBG_3_19, lawsuit_NN_5_28); det(lawsuit_NN_5_28, a_DT_4_26); prep(lawsuit_NN_5_28, against_IN_6_36); pobj(against_IN_6_36, Google_NNP_7_44); prep(Google_NNP_7_44, in_IN_8_51); pobj(in_IN_8_51, York_NNP_10_58); nn(York_NNP_10_58, New_NNP_9_54)",
@@ -242,6 +243,12 @@ class SrlExtractionSpecTest extends Specification {
     expectedExtractions = Seq("(It; was; only when Jesus was in the boat and shouted , Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee)",
       "(Jesus; shouted; Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee)"))
 
+  expectedExtractions(
+    sentence = "In 2005 , Gruner + Jahr exited the U.S. magazine business.",
+    dgraphString = "pobj(In_IN_0_0, 2005_CD_1_3); nn(Jahr_NNP_5_19, Gruner_NNP_3_10); nn(Jahr_NNP_5_19, +_NNP_4_17); prep(exited_VBD_6_24, In_IN_0_0); punct(exited_VBD_6_24, ,_,_2_8); nsubj(exited_VBD_6_24, Jahr_NNP_5_19); dobj(exited_VBD_6_24, business_NN_10_49); punct(exited_VBD_6_24, ._._11_57); det(business_NN_10_49, the_DT_7_31); nn(business_NN_10_49, U.S._NNP_8_35); nn(business_NN_10_49, magazine_NN_9_40)",
+    frameStrings = Seq("exit_6.01:[AM-TMP=In_0, A0=Jahr_5, A1=business_10]"),
+    expectedExtractions = Seq("(Gruner + Jahr; exited; the U.S. magazine business; T:In 2005)"))
+
   expectedTriples(
       sentence = "The president asked Americans to imagine the suicide terrorists who attacked the United States if they had been armed by Iraq .",
     dgraphString = "det(president_NN_1_4, The_DT_0_0); nsubj(asked_VBD_2_14, president_NN_1_4); dobj(asked_VBD_2_14, Americans_NNPS_3_20); xcomp(asked_VBD_2_14, imagine_VB_5_33); punct(asked_VBD_2_14, ._._21_126); aux(imagine_VB_5_33, to_TO_4_30); dobj(imagine_VB_5_33, terrorists_NNS_8_53); det(terrorists_NNS_8_53, the_DT_6_41); nn(terrorists_NNS_8_53, suicide_NN_7_45); rcmod(terrorists_NNS_8_53, attacked_VBD_10_68); nsubj(attacked_VBD_10_68, who_WP_9_64); dobj(attacked_VBD_10_68, States_NNP_13_88); advcl(attacked_VBD_10_68, armed_VBN_18_112); det(States_NNP_13_88, the_DT_11_77); nn(States_NNP_13_88, United_NNP_12_81); mark(armed_VBN_18_112, if_IN_14_95); nsubjpass(armed_VBN_18_112, they_PRP_15_98); aux(armed_VBN_18_112, had_VBD_16_103); auxpass(armed_VBN_18_112, been_VBN_17_107); agent(armed_VBN_18_112, by_IN_19_118); pobj(by_IN_19_118, Iraq_NNP_20_121)",
@@ -253,4 +260,10 @@ class SrlExtractionSpecTest extends Specification {
       "(Americans; to imagine; the suicide terrorists who attacked the United States)",
       "(the suicide terrorists; attacked; the United States)",
       "(they; had been armed; by Iraq)"))
+
+  expectedTriples(
+    sentence = "Using glass-walled observation hives , he and his students spent several decades observing these bees .",
+    dgraphString = "dobj(Using_VBG_0_0, hives_NNS_5_31); hmod(walled_VBN_3_12, glass_NN_1_6); hyph(walled_VBN_3_12, -_HYPH_2_11); amod(hives_NNS_5_31, walled_VBN_3_12); nn(hives_NNS_5_31, observation_NN_4_19); cc(he_PRP_7_39, and_CC_8_42); conj(he_PRP_7_39, students_NNS_10_50); poss(students_NNS_10_50, his_PRP$_9_46); advcl(spent_VBD_11_59, Using_VBG_0_0); punct(spent_VBD_11_59, ,_,_6_37); nsubj(spent_VBD_11_59, he_PRP_7_39); dobj(spent_VBD_11_59, decades_NNS_13_73); xcomp(spent_VBD_11_59, observing_VBG_14_81); punct(spent_VBD_11_59, ._._17_102); amod(decades_NNS_13_73, several_JJ_12_65); dobj(observing_VBG_14_81, bees_NNS_16_97); det(bees_NNS_16_97, these_DT_15_91)",
+    frameStrings = Seq("use_0.01:[A1=hives_5, A0=he_7]", "spend_11.02:[AM-ADV=Using_0, A0=he_7, A1=decades_13, A2=observing_14]", "observe_14.01:[A0=he_7, A1=bees_16]"),
+    expectedTriples = Seq("(he and his students; spent; several decades; observing these bees)", "(he and his students; observing; these bees; Using glass-walled observation hives)"))
 }

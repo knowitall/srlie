@@ -25,6 +25,9 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
 
   val arg2s = arguments.filter { arg =>
     relation.intervals.forall(interval => arg.interval rightOf interval)
+  } ++ arguments.filter {arg =>
+    !relation.intervals.forall(interval => arg.interval rightOf interval) &&
+    (arg.role == Roles.AM_TMP || arg.role == Roles.AM_LOC)
   }
 
   def triplize(includeDobj: Boolean = true): Seq[SrlExtraction] = {
