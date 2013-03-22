@@ -30,11 +30,14 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
     (arg.role == Roles.AM_TMP || arg.role == Roles.AM_LOC)
   }
 
+  def relationArgument = {
+    if (this.active) this.arg2s.find(arg2 => arg2.role == Roles.A1 || arg2.role == Roles.A2)
+    else if (this.passive) this.arg2s.find(_.role == Roles.A2)
+    else None
+  }
+
   def triplize(includeDobj: Boolean = true): Seq[SrlExtraction] = {
-    val relArg =
-      if (this.active && includeDobj) arg2s.find(arg2 => arg2.role == Roles.A1 || arg2.role == Roles.A2)
-      else if (this.passive && includeDobj) arg2s.find(_.role == Roles.A2)
-      else None
+    val relArg = if (includeDobj) this.relationArgument else None
 
     val filteredArg2s = (arg2s filterNot (arg2 => relArg.exists(_ == arg2)))
     if (filteredArg2s.isEmpty) {
@@ -250,9 +253,18 @@ object SrlExtraction {
           case Some(extr) =>
             val subextrs = frameh.children flatMap rec
 
+            // triplize to include dobj in rel
+            val relation = extr.relationArgument match {
+              case Some(arg)
+                if subextrs.forall(_.arg2s.forall(arg2 => !(arg2.interval intersects arg.interval))) &&
+                (arg.interval borders extr.relation.span)
+                => extr.relation.copy(tokens = arg.tokens ++ extr.relation.tokens, text = extr.relation.text + " " + arg.text)
+              case _ => extr.relation
+            }
+
             extr +: (subextrs flatMap { subextr =>
               Exception.catching(classOf[IllegalArgumentException]) opt
-                new SrlExtraction(extr.relation concat subextr.relation, subextr.arguments, extr.negated)
+                new SrlExtraction(relation concat subextr.relation, subextr.arguments, extr.negated)
             })
           case None => Seq.empty
         }

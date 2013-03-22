@@ -218,19 +218,27 @@ class SrlExtractionSpecTest extends Specification {
     sentence = "Microsoft plans on filing a lawsuit against Google in New York.",
     dgraphString = "nsubj(plans_VBZ_1_10, Microsoft_NNP_0_0); prep(plans_VBZ_1_10, on_IN_2_16); punct(plans_VBZ_1_10, ._._11_62); pcomp(on_IN_2_16, filing_VBG_3_19); dobj(filing_VBG_3_19, lawsuit_NN_5_28); det(lawsuit_NN_5_28, a_DT_4_26); prep(lawsuit_NN_5_28, against_IN_6_36); pobj(against_IN_6_36, Google_NNP_7_44); prep(Google_NNP_7_44, in_IN_8_51); pobj(in_IN_8_51, York_NNP_10_58); nn(York_NNP_10_58, New_NNP_9_54)",
     frameStrings = Seq("plan_1.01:[A0=Microsoft_0, A1=on_2]", "file_3.01:[A0=Microsoft_0, A1=lawsuit_5, A3=against_6]"),
-    expectedExtractions = Seq("(Microsoft; plans; on filing a lawsuit against Google in New York)", "(Microsoft; plans on filing; a lawsuit; against Google in New York)"))
+    expectedExtractions = Seq(
+        "(Microsoft; plans; on filing a lawsuit against Google in New York)",
+        "(Microsoft; plans on filing; a lawsuit; against Google in New York)"))
 
   expectedExtractions(
     sentence = "That mis-characterizes when Shark said he loves ham.",
     dgraphString = """nsubj(characterizes_VBZ_3_9, That_DT_0_0); hmod(characterizes_VBZ_3_9, mis_NN_1_5); hyph(characterizes_VBZ_3_9, -_HYPH_2_8); advcl(characterizes_VBZ_3_9, said_VBD_6_34); punct(characterizes_VBZ_3_9, ._._10_51); advmod(said_VBD_6_34, when_WRB_4_23); nsubj(said_VBD_6_34, Shark_NNP_5_28); ccomp(said_VBD_6_34, loves_VBZ_8_42); nsubj(loves_VBZ_8_42, he_PRP_7_39); dobj(loves_VBZ_8_42, ham_NN_9_48)""",
     frameStrings = Seq("characterize_3.01:[A0=That_0, AM-TMP=said_6]", "say_6.01:[R-AM-TMP=when_4, A0=Shark_5, A1=loves_8]", "love_8.01:[A0=he_7, A1=ham_9]"),
-    expectedExtractions = Seq("(That; characterizes; T:when Shark said he loves ham)", "(Shark; said; he loves ham)", "(he; loves; ham)"))
+    expectedExtractions = Seq(
+        "(That; characterizes; T:when Shark said he loves ham)",
+        "(Shark; said; he loves ham)",
+        "(he; loves; ham)"))
 
   expectedExtractions(
     sentence = "Suharto moved his hands and spoke in a whisper today in what doctors called a miraculous recovery.",
     dgraphString = """nsubj(moved_VBD_1_8, Suharto_NNP_0_0); dobj(moved_VBD_1_8, hands_NNS_3_18); cc(moved_VBD_1_8, and_CC_4_24); conj(moved_VBD_1_8, spoke_VBD_5_28); punct(moved_VBD_1_8, ._._17_97); poss(hands_NNS_3_18, his_PRP$_2_14); prep(spoke_VBD_5_28, in_IN_6_34); npadvmod(spoke_VBD_5_28, today_NN_9_47); prep(spoke_VBD_5_28, in_IN_10_53); pobj(in_IN_6_34, whisper_NN_8_39); det(whisper_NN_8_39, a_DT_7_37); pcomp(in_IN_10_53, called_VBD_13_69); dobj(called_VBD_13_69, what_WP_11_56); nsubj(called_VBD_13_69, doctors_NNS_12_61); oprd(called_VBD_13_69, recovery_NN_16_89); det(recovery_NN_16_89, a_DT_14_76); amod(recovery_NN_16_89, miraculous_JJ_15_78)""",
     frameStrings = Seq("move_1.01:[A0=Suharto_0, A1=hands_3]", "speak_5.01:[A0=Suharto_0, AM-LOC=in_6, AM-TMP=today_9, AM-LOC=in_10]", "call_13.01:[R-A1=what_11, A0=doctors_12, A2=recovery_16]"),
-    expectedExtractions = Seq("(Suharto; moved; his hands)", "(Suharto; spoke; L:in a whisper; T:today; L:in what doctors called a miraculous recovery)", "(doctors; called; a miraculous recovery)"))
+    expectedExtractions = Seq(
+        "(Suharto; moved; his hands)",
+        "(Suharto; spoke; L:in a whisper; T:today; L:in what doctors called a miraculous recovery)",
+        "(doctors; called; a miraculous recovery)"))
 
   expectedExtractions(
     sentence = "It was only when Jesus was in the boat and shouted , Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee .",
@@ -240,17 +248,19 @@ class SrlExtractionSpecTest extends Specification {
       "shout_10.01:[R-AM-TMP=when_3, A0=Jesus_4, A1=be_13]",
       "be_13.01:[AM-ADV=only_2, A1=Peace_12, AM-TMP=still_14, A2=saved_19]",
       "save_19.02:[A1=disciples_17, A2=from_20]"),
-    expectedExtractions = Seq("(It; was; only when Jesus was in the boat and shouted , Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee)",
-      "(Jesus; shouted; Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee)"))
+    expectedExtractions = Seq(
+        "(It; was; only when Jesus was in the boat and shouted , Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee)",
+        "(Jesus; shouted; Peace be still that the disciples were saved from that terrible storm on the Sea of Galilee)"))
 
   expectedExtractions(
     sentence = "In 2005 , Gruner + Jahr exited the U.S. magazine business.",
     dgraphString = "pobj(In_IN_0_0, 2005_CD_1_3); nn(Jahr_NNP_5_19, Gruner_NNP_3_10); nn(Jahr_NNP_5_19, +_NNP_4_17); prep(exited_VBD_6_24, In_IN_0_0); punct(exited_VBD_6_24, ,_,_2_8); nsubj(exited_VBD_6_24, Jahr_NNP_5_19); dobj(exited_VBD_6_24, business_NN_10_49); punct(exited_VBD_6_24, ._._11_57); det(business_NN_10_49, the_DT_7_31); nn(business_NN_10_49, U.S._NNP_8_35); nn(business_NN_10_49, magazine_NN_9_40)",
     frameStrings = Seq("exit_6.01:[AM-TMP=In_0, A0=Jahr_5, A1=business_10]"),
-    expectedExtractions = Seq("(Gruner + Jahr; exited; the U.S. magazine business; T:In 2005)"))
+    expectedExtractions = Seq(
+        "(Gruner + Jahr; exited; the U.S. magazine business; T:In 2005)"))
 
   expectedTriples(
-      sentence = "The president asked Americans to imagine the suicide terrorists who attacked the United States if they had been armed by Iraq .",
+    sentence = "The president asked Americans to imagine the suicide terrorists who attacked the United States if they had been armed by Iraq .",
     dgraphString = "det(president_NN_1_4, The_DT_0_0); nsubj(asked_VBD_2_14, president_NN_1_4); dobj(asked_VBD_2_14, Americans_NNPS_3_20); xcomp(asked_VBD_2_14, imagine_VB_5_33); punct(asked_VBD_2_14, ._._21_126); aux(imagine_VB_5_33, to_TO_4_30); dobj(imagine_VB_5_33, terrorists_NNS_8_53); det(terrorists_NNS_8_53, the_DT_6_41); nn(terrorists_NNS_8_53, suicide_NN_7_45); rcmod(terrorists_NNS_8_53, attacked_VBD_10_68); nsubj(attacked_VBD_10_68, who_WP_9_64); dobj(attacked_VBD_10_68, States_NNP_13_88); advcl(attacked_VBD_10_68, armed_VBN_18_112); det(States_NNP_13_88, the_DT_11_77); nn(States_NNP_13_88, United_NNP_12_81); mark(armed_VBN_18_112, if_IN_14_95); nsubjpass(armed_VBN_18_112, they_PRP_15_98); aux(armed_VBN_18_112, had_VBD_16_103); auxpass(armed_VBN_18_112, been_VBN_17_107); agent(armed_VBN_18_112, by_IN_19_118); pobj(by_IN_19_118, Iraq_NNP_20_121)",
     frameStrings = Seq("ask_2.02:[A0=president_1, A2=Americans_3, A1=imagine_5]",
       "imagine_5.01:[A0=Americans_3, A1=terrorists_8]",
@@ -261,9 +271,9 @@ class SrlExtractionSpecTest extends Specification {
       "(the suicide terrorists; attacked; the United States)",
       "(they; had been armed; by Iraq)"))
 
-  expectedTriples(
-    sentence = "Using glass-walled observation hives , he and his students spent several decades observing these bees .",
-    dgraphString = "dobj(Using_VBG_0_0, hives_NNS_5_31); hmod(walled_VBN_3_12, glass_NN_1_6); hyph(walled_VBN_3_12, -_HYPH_2_11); amod(hives_NNS_5_31, walled_VBN_3_12); nn(hives_NNS_5_31, observation_NN_4_19); cc(he_PRP_7_39, and_CC_8_42); conj(he_PRP_7_39, students_NNS_10_50); poss(students_NNS_10_50, his_PRP$_9_46); advcl(spent_VBD_11_59, Using_VBG_0_0); punct(spent_VBD_11_59, ,_,_6_37); nsubj(spent_VBD_11_59, he_PRP_7_39); dobj(spent_VBD_11_59, decades_NNS_13_73); xcomp(spent_VBD_11_59, observing_VBG_14_81); punct(spent_VBD_11_59, ._._17_102); amod(decades_NNS_13_73, several_JJ_12_65); dobj(observing_VBG_14_81, bees_NNS_16_97); det(bees_NNS_16_97, these_DT_15_91)",
-    frameStrings = Seq("use_0.01:[A1=hives_5, A0=he_7]", "spend_11.02:[AM-ADV=Using_0, A0=he_7, A1=decades_13, A2=observing_14]", "observe_14.01:[A0=he_7, A1=bees_16]"),
-    expectedTriples = Seq("(he and his students; spent; several decades; observing these bees)", "(he and his students; observing; these bees; Using glass-walled observation hives)"))
+  expectedExtractions(
+    sentence = "Thus , the phloem can serve some people , allowing for swift electrical communication between widely separated organs .",
+    dgraphString = "det(phloem_NN_3_11, the_DT_2_7); advmod(serve_VB_5_22, Thus_RB_0_0); punct(serve_VB_5_22, ,_,_1_5); nsubj(serve_VB_5_22, phloem_NN_3_11); aux(serve_VB_5_22, can_MD_4_18); dobj(serve_VB_5_22, people_NNS_7_33); punct(serve_VB_5_22, ,_,_8_40); advcl(serve_VB_5_22, allowing_VBG_9_42); punct(serve_VB_5_22, ._._18_118); det(people_NNS_7_33, some_DT_6_28); prep(allowing_VBG_9_42, for_IN_10_51); pobj(for_IN_10_51, communication_NN_13_72); amod(communication_NN_13_72, swift_JJ_11_55); amod(communication_NN_13_72, electrical_JJ_12_61); prep(communication_NN_13_72, between_IN_14_86); pobj(between_IN_14_86, organs_NNS_17_111); advmod(separated_VBN_16_101, widely_RB_15_94); amod(organs_NNS_17_111, separated_VBN_16_101)",
+    frameStrings = Seq("serve_5.01:[AM-DIS=Thus_0, A0=phloem_3, AM-MOD=can_4, A2=people_7, AM-ADV=allowing_9]", "allow_9.01:[A0=phloem_3, A1=for_10]", "separate_16.01:[AM-MNR=widely_15, A1=organs_17]"),
+    expectedExtractions = Seq("(the phloem; can serve; some people)", "(the phloem; can serve some people allowing; for swift electrical communication between widely separated organs)"))
 }
