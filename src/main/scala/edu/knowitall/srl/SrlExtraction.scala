@@ -44,16 +44,23 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
       Seq(this)
     }
     else {
-      val extrs = filteredArg2s.map { arg2 =>
-        val args = arguments filterNot (arg => arg != arg2 && arg2s.contains(arg)) filterNot (arg => relArg.exists(_ == arg))
-        val rel = relArg match {
-          case Some(relArg) =>
-            val tokens = (relation.tokens ++ relArg.tokens).sortBy(_.interval)
-            val text = tokens.iterator.map(_.text).mkString(" ")
-            relation.copy(text=text, tokens=tokens, intervals=relation.intervals :+ relArg.interval)
-          case None => relation
+      val extrs = relArg match {
+        case Some(relArg) => arg2s.map { arg2 =>
+          val args = arguments filterNot (arg => arg != arg2 && arg2s.contains(arg))
+          val rel =
+            if (arg2 == relArg) {
+              relation
+            } else {
+              val tokens = (relation.tokens ++ relArg.tokens).sortBy(_.interval)
+              val text = tokens.iterator.map(_.text).mkString(" ")
+              relation.copy(text = text, tokens = tokens, intervals = relation.intervals :+ relArg.interval)
+            }
+          new SrlExtraction(rel, args, negated)
         }
-        new SrlExtraction(rel, args, negated)
+        case None => filteredArg2s.map { arg2 =>
+          val args = arguments filterNot (arg => arg != arg2 && arg2s.contains(arg))
+          new SrlExtraction(rel, args, negated)
+        }
       }
 
       // don't include dobj if we create any intransitives

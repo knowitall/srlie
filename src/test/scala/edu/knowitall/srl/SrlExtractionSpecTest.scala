@@ -208,7 +208,7 @@ class SrlExtractionSpecTest extends Specification {
          "throw_1.01:[A0=NJ_0, A1=ball_3, A2=to_4, AM-TMP=on_6, AM-TMP=after_8]") map Frame.deserialize(dgraph)
       srl.synchronized {
         val extrs = srl.extract(dgraph)(frames).map(_.extr)
-        extrs.flatMap(_.triplize(true)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw the ball; to Michae)", "(NJ; threw the ball; T:on Friday)", "(NJ; threw the ball; T:after work)"))
+        extrs.flatMap(_.triplize(true)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw; the ball)", "(NJ; threw the ball; to Michae)", "(NJ; threw the ball; T:on Friday)", "(NJ; threw the ball; T:after work)"))
         extrs.flatMap(_.triplize(false)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw; the ball)", "(NJ; threw; to Michae)", "(NJ; threw; T:on Friday)", "(NJ; threw; T:after work)"))
       }
     }
@@ -269,11 +269,18 @@ class SrlExtractionSpecTest extends Specification {
     expectedTriples = Seq("(The president; asked Americans; to imagine the suicide terrorists)",
       "(Americans; to imagine; the suicide terrorists who attacked the United States)",
       "(the suicide terrorists; attacked; the United States)",
-      "(they; had been armed; by Iraq)"))
+      "(they; had been armed; by Iraq)",
+      "(The president; asked; Americans)"))
 
   expectedExtractions(
     sentence = "Thus , the phloem can serve some people , allowing for swift electrical communication between widely separated organs .",
     dgraphString = "det(phloem_NN_3_11, the_DT_2_7); advmod(serve_VB_5_22, Thus_RB_0_0); punct(serve_VB_5_22, ,_,_1_5); nsubj(serve_VB_5_22, phloem_NN_3_11); aux(serve_VB_5_22, can_MD_4_18); dobj(serve_VB_5_22, people_NNS_7_33); punct(serve_VB_5_22, ,_,_8_40); advcl(serve_VB_5_22, allowing_VBG_9_42); punct(serve_VB_5_22, ._._18_118); det(people_NNS_7_33, some_DT_6_28); prep(allowing_VBG_9_42, for_IN_10_51); pobj(for_IN_10_51, communication_NN_13_72); amod(communication_NN_13_72, swift_JJ_11_55); amod(communication_NN_13_72, electrical_JJ_12_61); prep(communication_NN_13_72, between_IN_14_86); pobj(between_IN_14_86, organs_NNS_17_111); advmod(separated_VBN_16_101, widely_RB_15_94); amod(organs_NNS_17_111, separated_VBN_16_101)",
     frameStrings = Seq("serve_5.01:[AM-DIS=Thus_0, A0=phloem_3, AM-MOD=can_4, A2=people_7, AM-ADV=allowing_9]", "allow_9.01:[A0=phloem_3, A1=for_10]", "separate_16.01:[AM-MNR=widely_15, A1=organs_17]"),
     expectedExtractions = Seq("(the phloem; can serve; some people)", "(the phloem; can serve some people allowing; for swift electrical communication between widely separated organs)"))
+
+  expectedTriples(
+    sentence = "John gave the ball to Paul.",
+    dgraphString = "nsubj(gave_VBD_1_5, John_NNP_0_0); dobj(gave_VBD_1_5, ball_NN_3_14); prep(gave_VBD_1_5, to_IN_4_19); punct(gave_VBD_1_5, ._._6_26); det(ball_NN_3_14, the_DT_2_10); pobj(to_IN_4_19, Paul_NNP_5_22)",
+    frameStrings = Seq("give_1.01:[A0=John_0, A1=ball_3, A2=to_4]"),
+    expectedTriples = Seq("(John; gave the ball; to Paul)", "(John; gave; the ball)"))
 }
