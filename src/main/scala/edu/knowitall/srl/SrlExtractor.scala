@@ -3,6 +3,7 @@ package edu.knowitall.srl
 import scala.io.Source
 import edu.knowitall.tool.parse.ClearParser
 import edu.knowitall.tool.srl.ClearSrl
+import edu.knowitall.tool.srl.Srl
 import edu.knowitall.tool.parse.graph.DependencyGraph
 import scala.util.control.Exception
 import java.io.File
@@ -10,7 +11,7 @@ import edu.knowitall.common.Resource
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.srl.Frame
 
-class SrlExtractor(val srl: ClearSrl = new ClearSrl()) {
+class SrlExtractor(val srl: Srl = new ClearSrl()) {
   def apply(dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
     val frames = srl.apply(dgraph)
     this.extract(dgraph)(frames)
