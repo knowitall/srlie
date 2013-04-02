@@ -153,7 +153,7 @@ object SrlFeatures {
 
   object longArg1 extends SrlFeature("arg1 contains > 10 tokens") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg1.tokens.length > 10
+      inst.extr.arg1.tokens.length
     }
   }
 
