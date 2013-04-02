@@ -17,7 +17,7 @@ object TrainSrlConfidence {
     }
 
     val parser = new OptionParser("scoreextr") {
-      arg("labelled", "labelled extractions", { path: String => settings.inputFile = new File(path) })
+      arg("gold", "gold set", { path: String => settings.inputFile = new File(path) })
       argOpt("output", "output file", { path: String => settings.outputFile = Some(new File(path)) })
     }
 
@@ -40,7 +40,15 @@ object TrainSrlConfidence {
     val input =
       Resource.using (Source.fromFile(settings.inputFile)) { source =>
         source.getLines.map { line =>
-          val Array(score, extraction, _ , _, _, sentence) = line.split("\t")
+          val (score, extraction, sentence) =
+            try {
+              line.split("\t") match { case Array(score, extraction, _, _, _, sentence) =>
+                (score, extraction, sentence)
+              }
+            }
+            catch {
+              case e: MatchError => throw new MatchError("Could not match line: " + line)
+            }
           val annotation = score match {
             case "" => None
             case "0" | "1" => Some(if (score == "1") true else false)
