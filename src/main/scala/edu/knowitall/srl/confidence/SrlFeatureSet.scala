@@ -53,17 +53,45 @@ object SrlFeatures {
     }
   }
 
-  object arg1ContainsPronoun extends SrlFeature("arg1 contains a pronoun, that, or EX") {
+  object arg1ContainsPronoun extends SrlFeature("arg1 contains a pronoun or EX") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg1.tokens.exists(tok => tok.isPronoun || tok.postag == "EX") ||
-        inst.extr.arg1.tokens.forall(tok => (tok.string equalsIgnoreCase "that") || (tok.string equalsIgnoreCase "those") || (tok.string equalsIgnoreCase "ive"))
+      inst.extr.arg1.tokens.exists(tok => tok.isPronoun || tok.postag == "EX")
     }
   }
 
-  object arg2ContainsPronoun extends SrlFeature("at least one arg2 contains a pronoun, that, or EX") {
+  object arg2ContainsPronoun extends SrlFeature("at least one arg2 contains a pronoun or EX") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg2s.exists(_.tokens.exists(tok => tok.isPronoun || tok.postag == "EX")) ||
-        inst.extr.arg1.tokens.forall(tok => (tok.string equalsIgnoreCase "that") || (tok.string equalsIgnoreCase "those") || (tok.string equalsIgnoreCase "ive"))
+      inst.extr.arg2s.exists(_.tokens.exists(tok => tok.isPronoun || tok.postag == "EX"))
+    }
+  }
+
+  object weirdArg {
+    val blacklist = Set("that", "those", "ive")
+  }
+  object weirdArg1 extends SrlFeature("arg1 is blacklisted") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.extr.arg1.tokens.forall(tok =>
+        weirdArg.blacklist contains tok.string)
+    }
+  }
+
+  object weirdArg2 extends SrlFeature("arg2 is blacklisted") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.extr.arg2s.exists(_.tokens.exists(tok =>
+        weirdArg.blacklist contains tok.string))
+    }
+  }
+
+  object arg1Noun extends SrlFeature("arg1 is noun") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.extr.arg1.tokens.exists(tok => tok.isNoun || tok.isPronoun)
+    }
+  }
+
+  object arg2Noun extends SrlFeature("at least one arg2 is noun") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.extr.arg2s.exists(_.tokens.exists(tok =>
+        tok.isNoun || tok.isPronoun))
     }
   }
 
@@ -91,9 +119,29 @@ object SrlFeatures {
     }
   }
 
+  object arg1BordersRel extends SrlFeature("arg1 borders rel") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.extr.arg1.interval borders inst.extr.relation.span
+    }
+  }
+
+  object arg2BordersRel extends SrlFeature("arg2 borders rel") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.extr.arg2s.exists(_.interval borders inst.extr.relation.span)
+    }
+  }
+
   object relContainsVerb extends SrlFeature("rel contains verb") {
     override def apply(inst: SrlExtractionInstance): Double = {
       inst.extr.relation.tokens exists (_.isVerb)
+    }
+  }
+
+  object relContiguous extends SrlFeature("rel contiguous") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.extr.relation.span.forall { i =>
+        inst.extr.relation.tokens.exists(tok => tok.interval contains i)
+      }
     }
   }
 
@@ -105,13 +153,31 @@ object SrlFeatures {
 
   object longArg1 extends SrlFeature("arg1 contains > 10 tokens") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg1.tokens.length
+      inst.extr.arg1.tokens.length > 10
     }
   }
 
   object longArg2 extends SrlFeature("an arg2 contains > 10 tokens") {
     override def apply(inst: SrlExtractionInstance): Double = {
       inst.extr.arg2s.exists(_.tokens.length >= 10)
+    }
+  }
+
+  object shortSentence extends SrlFeature("sentence contains < 10 tokens") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.dgraph.nodes.size > 20
+    }
+  }
+
+  object longSentence extends SrlFeature("sentence contains > 20 nodes") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.dgraph.nodes.size > 20
+    }
+  }
+
+  object longerSentence extends SrlFeature("sentence contains > 40 nodes") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.dgraph.nodes.size > 40
     }
   }
 
@@ -140,9 +206,16 @@ object SrlFeatures {
     arg2ContainsPronoun,
     arg1Proper,
     arg2Proper,
+    arg1Noun,
+    arg2Noun,
+    weirdArg1,
+    weirdArg2,
     arg1BeforeRel,
     arg2sAfterRel,
+    arg1BordersRel,
+    arg2BordersRel,
     relContainsVerb,
+    relContiguous,
     longRelation,
     longArg1,
     longArg2,
