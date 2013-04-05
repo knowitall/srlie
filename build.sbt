@@ -1,10 +1,12 @@
+net.virtualvoid.sbt.graph.Plugin.graphSettings
+
 name := "openie-srl"
 
 organization := "edu.washington.cs.knowitall.openiesrl"
 
-version := "1.0-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
-crossScalaVersions := Seq("2.9.2", "2.10.1")
+crossScalaVersions := Seq("2.10.1", "2.9.2")
 
 scalaVersion <<= crossScalaVersions { (vs: Seq[String]) => vs.head }
 
