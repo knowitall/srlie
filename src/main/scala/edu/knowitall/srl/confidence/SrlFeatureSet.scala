@@ -140,7 +140,7 @@ object SrlFeatures {
   object relContiguous extends SrlFeature("rel contiguous") {
     override def apply(inst: SrlExtractionInstance): Double = {
       inst.extr.relation.span.forall { i =>
-        inst.extr.relation.tokens.exists(tok => tok.interval contains i)
+        inst.extr.relation.tokens.exists(tok => tok.tokenInterval contains i)
       }
     }
   }

@@ -51,7 +51,7 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
             if (arg2 == relArg) {
               relation
             } else {
-              val tokens = (relation.tokens ++ relArg.tokens).sortBy(_.interval)
+              val tokens = (relation.tokens ++ relArg.tokens).sortBy(_.tokenInterval)
               val text = tokens.iterator.map(_.text).mkString(" ")
               relation.copy(text = text, tokens = tokens, intervals = relation.intervals :+ relArg.interval)
             }
