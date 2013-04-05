@@ -171,6 +171,8 @@ class SrlExtractionSpecTest extends Specification {
       }
 
       extrs.map(_.toString) must haveTheSameElementsAs(Seq("(John; wants; to blow his nose and eat corn)", "(John; wants to blow; his nose)", "(John; wants to eat; corn)"))
+      extrs.find(_.toString == "(John; wants to blow; his nose)").get.context.map(_.text) must_== Some("John wants")
+      extrs.find(_.toString == "(John; wants to eat; corn)").get.context.map(_.text) must_== Some("John wants")
     }
   }
 

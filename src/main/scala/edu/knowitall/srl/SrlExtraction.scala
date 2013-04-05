@@ -15,8 +15,10 @@ import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.collection.immutable.graph.UpEdge
 import edu.knowitall.collection.immutable.graph.Graph
 import edu.knowitall.srl.SrlExtraction._
+import scala.collection.immutable.SortedSet
+import edu.knowitall.tool.tokenize.Token
 
-case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: Boolean) {
+case class SrlExtraction(relation: Relation, arguments: Seq[Argument], context: Option[Context], negated: Boolean) {
   val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (relation.intervals.forall(interval => arg.interval leftOf interval))).getOrElse {
     throw new IllegalArgumentException("Extraction has no arg1.")
   }
@@ -55,11 +57,11 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], negated: 
               val text = tokens.iterator.map(_.text).mkString(" ")
               relation.copy(text = text, tokens = tokens, intervals = relation.intervals :+ relArg.interval)
             }
-          new SrlExtraction(rel, args, negated)
+          new SrlExtraction(rel, args, context, negated)
         }
         case None => filteredArg2s.map { arg2 =>
           val args = arguments filterNot (arg => arg != arg2 && arg2s.contains(arg))
-          new SrlExtraction(rel, args, negated)
+          new SrlExtraction(rel, args, context, negated)
         }
       }
 
@@ -96,7 +98,20 @@ object SrlExtraction {
     def tokens: Seq[DependencyNode]
   }
 
-  class Argument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role) extends Part {
+  abstract class MultiPart extends Part {
+    def intervals: Seq[Interval]
+    def span = Interval.span(intervals)
+  }
+
+  abstract class SinglePart extends Part {
+    def interval: Interval
+  }
+
+  class Context(val text: String, val tokens: Seq[DependencyNode], val intervals: Seq[Interval]) extends MultiPart {
+    override def toString = text
+  }
+
+  class Argument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role) extends SinglePart {
     override def toString = text
   }
 
@@ -110,13 +125,11 @@ object SrlExtraction {
     override def toString = "L:" + super.toString
   }
 
-  case class Relation(text: String, sense: Option[Sense], tokens: Seq[DependencyNode], intervals: Seq[Interval]) extends Part {
+  case class Relation(text: String, sense: Option[Sense], tokens: Seq[DependencyNode], intervals: Seq[Interval]) extends MultiPart {
     // make sure all the intervals are disjoint
     require(intervals.forall(x => !intervals.exists(y => x != y && (x intersects y))))
 
     override def toString = text
-
-    def span = Interval.span(intervals)
 
     def concat(other: Relation) = {
       Relation(this.text + " " + other.text, None, this.tokens ++ other.tokens, this.intervals ++ other.intervals)
@@ -249,7 +262,7 @@ object SrlExtraction {
       }
     }
 
-    Exception.catching(classOf[IllegalArgumentException]) opt SrlExtraction(rel, mappedArgs, negated)
+    Exception.catching(classOf[IllegalArgumentException]) opt SrlExtraction(rel, mappedArgs, None, negated)
   }
 
   def fromFrameHierarchy(dgraph: DependencyGraph)(frameh: FrameHierarchy): Seq[SrlExtraction] = {
@@ -258,6 +271,18 @@ object SrlExtraction {
       else {
         SrlExtraction.fromFrame(dgraph)(frameh.frame) match {
           case Some(extr) =>
+            val context = {
+              extr.context match {
+                case Some(context) =>
+                  val intervals = SortedSet.empty[Interval] ++ extr.rel.intervals + extr.arg1.interval
+                  val tokens = (Set.empty[DependencyNode] ++ extr.arg1.tokens ++ extr.rel.tokens).toSeq.sortBy(_.tokenInterval)
+                  new Context(tokens.iterator.map(_.string).mkString(" "), tokens, intervals.toSeq)
+                case None =>
+                  val intervals = extr.rel.intervals :+ extr.arg1.interval
+                  val tokens = extr.arg1.tokens ++ extr.rel.tokens
+                  new Context(tokens.iterator.map(_.string).mkString(" "), tokens, intervals)
+              }
+            }
             val subextrs = frameh.children flatMap rec
 
             // triplize to include dobj in rel
@@ -271,7 +296,7 @@ object SrlExtraction {
 
             extr +: (subextrs flatMap { subextr =>
               Exception.catching(classOf[IllegalArgumentException]) opt
-                new SrlExtraction(relation concat subextr.relation, subextr.arguments, extr.negated)
+                new SrlExtraction(relation concat subextr.relation, subextr.arguments, Some(context), extr.negated || subextr.negated)
             })
           case None => Seq.empty
         }
