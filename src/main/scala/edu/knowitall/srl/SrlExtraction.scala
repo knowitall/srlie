@@ -73,7 +73,11 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], context: 
 
   override def toString = {
     val parts = Iterable(arg1.text, relation.text, arg2s.iterator.map(_.toString).mkString("; "))
-    parts.mkString("(", "; ", ")")
+    val prefix = context match {
+      case Some(context) => context.text + ":"
+      case None => ""
+    }
+    prefix + parts.mkString("(", "; ", ")")
   }
 
   def intransitive = arg2s.isEmpty
@@ -101,6 +105,8 @@ object SrlExtraction {
   abstract class MultiPart extends Part {
     def intervals: Seq[Interval]
     def span = Interval.span(intervals)
+
+    override def hashCode = intervals.hashCode * 39 + tokens.hashCode
   }
 
   abstract class SinglePart extends Part {
@@ -109,10 +115,32 @@ object SrlExtraction {
 
   class Context(val text: String, val tokens: Seq[DependencyNode], val intervals: Seq[Interval]) extends MultiPart {
     override def toString = text
+
+    def canEqual(that: Any): Boolean = that.isInstanceOf[Context]
+    override def equals(that: Any): Boolean = that match {
+      case that: Context => (
+        that.canEqual(this)
+        && this.text == that.text
+        && this.tokens == that.tokens
+        && this.intervals == that.intervals)
+      case _ => false
+    }
   }
 
   class Argument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role) extends SinglePart {
     override def toString = text
+
+    override def hashCode = interval.hashCode * 39 + tokens.hashCode
+    def canEqual(that: Any): Boolean = that.isInstanceOf[Argument]
+    override def equals(that: Any): Boolean = that match {
+      case that: Argument => (
+        that.canEqual(this)
+        && this.text == that.text
+        && this.tokens == that.tokens
+        && this.interval == that.interval
+        && this.role == that.role)
+      case _ => false
+    }
   }
 
   class TemporalArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
@@ -130,6 +158,16 @@ object SrlExtraction {
     require(intervals.forall(x => !intervals.exists(y => x != y && (x intersects y))))
 
     override def toString = text
+
+    def canEqual(that: Any): Boolean = that.isInstanceOf[Relation]
+    override def equals(that: Any): Boolean = that match {
+      case that: Relation => (
+        that.canEqual(this)
+        && this.text == that.text
+        && this.tokens == that.tokens
+        && this.intervals == that.intervals)
+      case _ => false
+    }
 
     def concat(other: Relation) = {
       Relation(this.text + " " + other.text, None, this.tokens ++ other.tokens, this.intervals ++ other.intervals)
@@ -296,7 +334,14 @@ object SrlExtraction {
 
             extr +: (subextrs flatMap { subextr =>
               Exception.catching(classOf[IllegalArgumentException]) opt
-                new SrlExtraction(relation concat subextr.relation, subextr.arguments, Some(context), extr.negated || subextr.negated)
+              {
+                if (extr.arg1 == subextr.arg1)
+                  // combine the relations to make a more informative relation phrase
+                  new SrlExtraction(relation concat subextr.relation, subextr.arguments, Some(context), extr.negated || subextr.negated)
+                else
+                  // the nested extraction has a different arg1
+                  new SrlExtraction(subextr.relation, subextr.arguments, Some(context), subextr.negated)
+              }
             })
           case None => Seq.empty
         }
