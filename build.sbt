@@ -1,5 +1,3 @@
-net.virtualvoid.sbt.graph.Plugin.graphSettings
-
 name := "openie-srl"
 
 organization := "edu.washington.cs.knowitall.openiesrl"
