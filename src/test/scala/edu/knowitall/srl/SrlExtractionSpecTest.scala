@@ -283,6 +283,13 @@ class SrlExtractionSpecTest extends Specification {
     frameStrings = Seq("serve_5.01:[AM-DIS=Thus_0, A0=phloem_3, AM-MOD=can_4, A2=people_7, AM-ADV=allowing_9]", "allow_9.01:[A0=phloem_3, A1=for_10]", "separate_16.01:[AM-MNR=widely_15, A1=organs_17]"),
     expectedExtractions = Seq("(the phloem; can serve; some people)", "the phloem can serve:(the phloem; can serve some people allowing; for swift electrical communication between widely separated organs)"))
 
+  expectedExtractions(
+    sentence = "John said Frank works in the yard.",
+    dgraphString = "nsubj(said_VBD_1_5, John_NNP_0_0); ccomp(said_VBD_1_5, works_VBZ_3_16); punct(said_VBD_1_5, ._._7_33); nsubj(works_VBZ_3_16, Frank_NNP_2_10); prep(works_VBZ_3_16, in_IN_4_22); pobj(in_IN_4_22, yard_NN_6_29); det(yard_NN_6_29, the_DT_5_25)",
+    frameStrings = Seq("ay_1.01:[A0=John_0, A1=works_3]",
+      "work_3.01:[A0=Frank_2, AM-LOC=in_4]"),
+    expectedExtractions = Seq("(John; said; Frank works in the yard)", "John said:(Frank; works; L:in the yard)"))
+
   expectedTriples(
     sentence = "John gave the ball to Paul.",
     dgraphString = "nsubj(gave_VBD_1_5, John_NNP_0_0); dobj(gave_VBD_1_5, ball_NN_3_14); prep(gave_VBD_1_5, to_IN_4_19); punct(gave_VBD_1_5, ._._6_26); det(ball_NN_3_14, the_DT_2_10); pobj(to_IN_4_19, Paul_NNP_5_22)",
