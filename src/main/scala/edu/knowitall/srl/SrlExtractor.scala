@@ -97,20 +97,24 @@ object SrlExtractor extends App {
         val graph = graphify(line)
         val frames = srl.apply(graph)
         val hierarchy = FrameHierarchy.fromFrames(graph, frames.toIndexedSeq)
-        val extrs = frames flatMap SrlExtraction.fromFrame(graph)
+        val extrs = hierarchy flatMap SrlExtraction.fromFrameHierarchy(graph)
         val triples = extrs flatMap (_.triplize(true))
 
         if (config.outputFormat == OutputFormat.Standard) {
           println(graph.serialize)
+          println()
 
           println("frames:")
           frames.map(_.serialize) foreach println
+          println()
 
           println("hierarchy:")
           hierarchy foreach println
+          println()
 
           println("extractions:")
           extrs foreach println
+          println()
 
           println("triples:")
           triples foreach println
