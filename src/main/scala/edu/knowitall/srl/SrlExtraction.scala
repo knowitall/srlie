@@ -18,19 +18,8 @@ import edu.knowitall.srl.SrlExtraction._
 import scala.collection.immutable.SortedSet
 import edu.knowitall.tool.tokenize.Token
 
-case class SrlExtraction(relation: Relation, arguments: Seq[Argument], context: Option[Context], negated: Boolean) {
-  val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (relation.intervals.forall(interval => arg.interval leftOf interval))).getOrElse {
-    throw new IllegalArgumentException("Extraction has no arg1.")
-  }
-
+case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument], context: Option[Context], negated: Boolean) {
   def rel = relation
-
-  val arg2s = arguments.filter { arg =>
-    relation.intervals.forall(interval => arg.interval rightOf interval)
-  } ++ arguments.filter {arg =>
-    !relation.intervals.forall(interval => arg.interval rightOf interval) &&
-    (arg.role == Roles.AM_TMP || arg.role == Roles.AM_LOC)
-  }
 
   def relationArgument = {
     if (this.active) this.arg2s.find(arg2 => arg2.role == Roles.A1 || arg2.role == Roles.A2)
@@ -48,7 +37,7 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], context: 
     else {
       val extrs = relArg match {
         case Some(relArg) => arg2s.map { arg2 =>
-          val args = arguments filterNot (arg => arg != arg2 && arg2s.contains(arg))
+          val arg2s = this.arg2s filterNot (arg => arg != arg2)
           val rel =
             if (arg2 == relArg) {
               relation
@@ -57,11 +46,11 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], context: 
               val text = tokens.iterator.map(_.text).mkString(" ")
               relation.copy(text = text, tokens = tokens, intervals = relation.intervals :+ relArg.interval)
             }
-          new SrlExtraction(rel, args, context, negated)
+          new SrlExtraction(rel, this.arg1, arg2s, context, negated)
         }
         case None => filteredArg2s.map { arg2 =>
-          val args = arguments filterNot (arg => arg != arg2 && arg2s.contains(arg))
-          new SrlExtraction(rel, args, context, negated)
+          val arg2s = this.arg2s filterNot (arg => arg != arg2)
+          new SrlExtraction(rel, this.arg1, arg2s, context, negated)
         }
       }
 
@@ -83,12 +72,7 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], context: 
   def intransitive = arg2s.isEmpty
 
   // an extraction is active if A0 is the first A*
-  def active = {
-    !intransitive && (arguments.find(_.role.label matches "A\\d+") match {
-      case Some(node) => node.role == Roles.A0
-      case None => false
-    })
-  }
+  def active = !intransitive && this.arg1.role == Roles.A0
 
   // an extraction is active if it's not passive
   def passive = !intransitive && !active
@@ -96,6 +80,21 @@ case class SrlExtraction(relation: Relation, arguments: Seq[Argument], context: 
 
 object SrlExtraction {
   case class Sense(name: String, id: String)
+
+  def create(relation: Relation, arguments: Seq[Argument], context: Option[Context], negated: Boolean) = {
+    val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (relation.intervals.forall(interval => arg.interval leftOf interval))).getOrElse {
+      throw new IllegalArgumentException("Extraction has no arg1.")
+    }
+
+    val arg2s = arguments.filter { arg =>
+      relation.intervals.forall(interval => arg.interval rightOf interval)
+    } ++ arguments.filter { arg =>
+      !relation.intervals.forall(interval => arg.interval rightOf interval) &&
+        (arg.role == Roles.AM_TMP || arg.role == Roles.AM_LOC)
+    }
+
+    new SrlExtraction(relation, arg1, arg2s, context, negated)
+  }
 
   abstract class Part {
     def text: String
@@ -300,7 +299,7 @@ object SrlExtraction {
       }
     }
 
-    Exception.catching(classOf[IllegalArgumentException]) opt SrlExtraction(rel, mappedArgs, None, negated)
+    Exception.catching(classOf[IllegalArgumentException]) opt SrlExtraction.create(rel, mappedArgs, None, negated)
   }
 
   def fromFrameHierarchy(dgraph: DependencyGraph)(frameh: FrameHierarchy): Seq[SrlExtraction] = {
@@ -337,10 +336,10 @@ object SrlExtraction {
               {
                 if (extr.arg1 == subextr.arg1)
                   // combine the relations to make a more informative relation phrase
-                  new SrlExtraction(relation concat subextr.relation, subextr.arguments, Some(context), extr.negated || subextr.negated)
+                  SrlExtraction(relation concat subextr.relation, subextr.arg1, subextr.arg2s, Some(context), extr.negated || subextr.negated)
                 else
                   // the nested extraction has a different arg1
-                  new SrlExtraction(subextr.relation, subextr.arguments, Some(context), subextr.negated)
+                  SrlExtraction(subextr.relation, subextr.arg1, subextr.arg2s, Some(context), subextr.negated)
               }
             })
           case None => Seq.empty

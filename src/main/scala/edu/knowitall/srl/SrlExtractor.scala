@@ -10,6 +10,7 @@ import java.io.File
 import edu.knowitall.common.Resource
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.srl.Frame
+import edu.knowitall.tool.srl.Roles
 
 class SrlExtractor(val srl: Srl = new ClearSrl()) {
   def apply(dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
