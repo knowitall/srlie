@@ -27,6 +27,31 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
     else None
   }
 
+  def transformations(transformations: Transformation*): Seq[SrlExtraction] = {
+    def passiveDobj = {
+      for {
+        a1 <- arg2s.find(_.role == Roles.A1).toSeq
+
+        a0 = arg1
+        if a0.role == Roles.A0
+      } yield {
+        val a0New = new Argument("[by] " + a0.text, a0.tokens, a0.interval, a0.role)
+        val arg2s = a0New +: this.arg2s.filterNot(_ == a1)
+
+        val rel = new Relation("[be] " + this.rel.text, this.rel.sense, this.rel.tokens, this.rel.intervals)
+
+        SrlExtraction(rel, a1, arg2s, context, negated)
+      }
+    }
+
+    if (transformations.contains(PassiveDobj)) {
+      passiveDobj
+    }
+    else {
+      Seq.empty
+    }
+  }
+
   def triplize(includeDobj: Boolean = true): Seq[SrlExtraction] = {
     val relArg = if (includeDobj) this.relationArgument else None
 
@@ -80,6 +105,9 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
 
 object SrlExtraction {
   case class Sense(name: String, id: String)
+
+  sealed abstract class Transformation
+  case object PassiveDobj extends Transformation
 
   def create(relation: Relation, arguments: Seq[Argument], context: Option[Context], negated: Boolean) = {
     val arg1 = arguments.find(arg => (arg.role.label matches "A\\d+") && (relation.intervals.forall(interval => arg.interval leftOf interval))).getOrElse {

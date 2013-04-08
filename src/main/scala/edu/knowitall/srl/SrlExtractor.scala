@@ -117,6 +117,10 @@ object SrlExtractor extends App {
           extrs foreach println
           println()
 
+          println("transformations:")
+          extrs.flatMap(_.transformations(SrlExtraction.PassiveDobj)) foreach println
+          println()
+
           println("triples:")
           triples foreach println
         }
