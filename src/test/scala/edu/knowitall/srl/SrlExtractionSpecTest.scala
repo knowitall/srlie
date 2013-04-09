@@ -220,8 +220,7 @@ class SrlExtractionSpecTest extends Specification {
     val sentence = "Cordis sold its pacemaker operations two years ago to Telectronics Holding Ltd. of Australia ."
     ("no errors with: '" + sentence + "'") in {
       val dgraph = DependencyGraph.deserialize("nsubj(sold_VBD_1_7, Cordis_NNP_0_0); dobj(sold_VBD_1_7, operations_NNS_4_26); advmod(sold_VBD_1_7, ago_RB_7_47); prep(sold_VBD_1_7, to_IN_8_51); punct(sold_VBD_1_7, ._._14_93); poss(operations_NNS_4_26, its_PRP$_2_12); nn(operations_NNS_4_26, pacemaker_NN_3_16); num(years_NNS_6_41, two_CD_5_37); npadvmod(ago_RB_7_47, years_NNS_6_41); pobj(to_IN_8_51, Ltd._NNP_11_75); nn(Ltd._NNP_11_75, Telectronics_NNP_9_54); nn(Ltd._NNP_11_75, Holding_NNP_10_67); prep(Ltd._NNP_11_75, of_IN_12_80); pobj(of_IN_12_80, Australia_NNP_13_83)")
-      val frames = IndexedSeq(
-         "sell_1.01:[A0=Cordis_0, A1=operations_4, AM-TMP=ago_7, A2=to_8]") map Frame.deserialize(dgraph)
+      val frames = IndexedSeq("sell_1.01:[A0=Cordis_0, A1=operations_4, AM-TMP=ago_7, A2=to_8]") map Frame.deserialize(dgraph)
       srl.synchronized {
         val extrs = srl.extract(dgraph)(frames).map(_.extr)
         extrs.map(_.toString) must haveTheSameElementsAs(List("(Cordis; sold; its pacemaker operations; T:two years ago; to Telectronics Holding Ltd. of Australia)"))
@@ -229,6 +228,20 @@ class SrlExtractionSpecTest extends Specification {
         transformations.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [be] sold; T:two years ago; to Telectronics Holding Ltd. of Australia)"))
         val triples = transformations.flatMap(_.triplize(true))
         triples.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [be] sold to Telectronics Holding Ltd. of Australia; T:two years ago)", "(its pacemaker operations; [be] sold; to Telectronics Holding Ltd. of Australia)"))
+      }
+    }
+  }
+
+    {
+    val sentence = "Ford said owners should return the cars to dealers so the windshields can be removed and securely reinstalled ."
+    ("no errors with: '" + sentence + "'") in {
+      val dgraph = DependencyGraph.deserialize("nsubj(said_VBD_1_5, Ford_NNP_0_0); ccomp(said_VBD_1_5, removed_VBN_14_77); punct(said_VBD_1_5, ._._18_110); nsubj(return_VB_4_24, owners_NNS_2_10); aux(return_VB_4_24, should_MD_3_17); dobj(return_VB_4_24, cars_NNS_6_35); prep(return_VB_4_24, to_IN_7_40); det(cars_NNS_6_35, the_DT_5_31); pobj(to_IN_7_40, dealers_NNS_8_43); det(windshields_NNS_11_58, the_DT_10_54); ccomp(removed_VBN_14_77, return_VB_4_24); dep(removed_VBN_14_77, so_IN_9_51); nsubjpass(removed_VBN_14_77, windshields_NNS_11_58); aux(removed_VBN_14_77, can_MD_12_70); auxpass(removed_VBN_14_77, be_VB_13_74); cc(removed_VBN_14_77, and_CC_15_85); conj(removed_VBN_14_77, reinstalled_VBN_17_98); advmod(reinstalled_VBN_17_98, securely_RB_16_89)")
+      val frames = IndexedSeq("say_1.01:[A0=Ford_0, A1=removed_14]", "return_4.02:[A0=owners_2, AM-MOD=should_3, A1=cars_6, A2=to_7]", "remove_14.01:[A1=windshields_11, AM-MOD=can_12]", "reinstall_17.01:[A1=windshields_11, AM-MOD=can_12, AM-MNR=securely_16]") map Frame.deserialize(dgraph)
+      srl.synchronized {
+        val extrs = srl.extract(dgraph)(frames).map(_.extr)
+        extrs.map(_.toString) must haveTheSameElementsAs(List("(the windshields; securely reinstalled; )", "(Ford; said; owners should return the cars to dealers so the windshields can be removed and securely reinstalled)", "Ford said:(the windshields; can be removed; )", "Ford said:(owners; should return; the cars; to dealers)"))
+        val transformations = extrs.flatMap(_.transformations(SrlExtraction.PassiveDobj))
+        transformations.map(_.toString) must haveTheSameElementsAs(List("Ford said:(the cars; should [be] return; to dealers)"))
       }
     }
   }
