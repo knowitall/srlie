@@ -13,6 +13,8 @@ import edu.knowitall.tool.srl.Frame
 import edu.knowitall.tool.srl.Roles
 import edu.knowitall.srl.confidence.SrlConfidenceFunction
 import java.io.PrintWriter
+import java.net.URL
+import edu.knowitall.srl.confidence.SrlFeatureSet
 
 class SrlExtractor(val srl: Srl = new ClearSrl()) {
   def apply(dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
@@ -46,7 +48,11 @@ object SrlExtractor extends App {
     case object Evaluation extends OutputFormat
   }
 
-  case class Config(inputFile: Option[File] = None, outputFile: Option[File] = None, outputFormat: OutputFormat = OutputFormat.Standard, gold: Map[String, Boolean] = Map.empty) {
+  case class Config(inputFile: Option[File] = None,
+      outputFile: Option[File] = None,
+      outputFormat: OutputFormat = OutputFormat.Standard,
+      gold: Map[String, Boolean] = Map.empty,
+      classifierUrl: URL = SrlConfidenceFunction.defaultModelUrl) {
     def source() = {
       inputFile match {
         case Some(file) => Source.fromFile(file)
@@ -90,6 +96,11 @@ object SrlExtractor extends App {
         }
         config.copy(gold = gold)
       },
+      opt("classifier", "url to classifier model") { (string, config) =>
+        val file = new File(string)
+        require(file.exists, "classifier file does not exist: " + file)
+        config.copy(classifierUrl = file.toURI.toURL)
+      },
       opt("format", "output format: {standard, annotation}") { (string, config) =>
         config.copy(outputFormat = OutputFormat(string))
       })
@@ -103,7 +114,7 @@ object SrlExtractor extends App {
   def run(config: Config) {
     lazy val parser = new ClearParser()
     val srl = new SrlExtractor()
-    val conf = SrlConfidenceFunction.loadDefaultClassifier()
+    val conf = SrlConfidenceFunction.fromUrl(SrlFeatureSet, config.classifierUrl)
 
     def graphify(line: String) = {
       (Exception.catching(classOf[DependencyGraph.SerializationException]) opt DependencyGraph.deserialize(line)) match {
