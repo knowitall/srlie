@@ -136,6 +136,8 @@ object SrlExtractor extends App {
               writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), conf(inst), extr.toString, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
             }
           }
+
+          writer.flush()
         }
       }
     }
