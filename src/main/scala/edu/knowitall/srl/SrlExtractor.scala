@@ -79,7 +79,10 @@ object SrlExtractor extends App {
         val gold = Resource.using (Source.fromFile(file)) { source =>
           (for {
             line <- source.getLines
-            Array(annotation, string, _ @ _*) = line.split("\t")
+            (annotation, string) = line.split("\t") match {
+              case Array(annotation, string, _ @ _*) => (annotation, string)
+              case _ => throw new MatchError("Could not parse gold entry: " + line)
+            }
             boolean = if (annotation == "1") true else false
           } yield {
             string -> boolean
@@ -130,13 +133,13 @@ object SrlExtractor extends App {
             for (inst <- triples) {
               val extr = inst.extr
               val string = Iterable(extr.arg1.text, extr.rel.text, extr.arg2s.map(_.text).mkString("; ")).mkString("(", "; ", ")")
-              writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+              writer.println(Iterable(config.gold.get(string).map(if (_) 1 else 0).getOrElse(""), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
             }
           } else if (config.outputFormat == OutputFormat.Evaluation) {
             for (inst <- triples) {
               val extr = inst.extr
               val string = Iterable(extr.arg1.text, extr.rel.text, extr.arg2s.map(_.text).mkString("; ")).mkString("(", "; ", ")")
-              writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), conf(inst), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+              writer.println(Iterable(config.gold.get(string).map(if (_) 1 else 0).getOrElse(""), conf(inst), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
             }
           }
 
