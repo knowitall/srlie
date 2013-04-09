@@ -216,6 +216,23 @@ class SrlExtractionSpecTest extends Specification {
     }
   }
 
+  {
+    val sentence = "Cordis sold its pacemaker operations two years ago to Telectronics Holding Ltd. of Australia ."
+    ("no errors with: '" + sentence + "'") in {
+      val dgraph = DependencyGraph.deserialize("nsubj(sold_VBD_1_7, Cordis_NNP_0_0); dobj(sold_VBD_1_7, operations_NNS_4_26); advmod(sold_VBD_1_7, ago_RB_7_47); prep(sold_VBD_1_7, to_IN_8_51); punct(sold_VBD_1_7, ._._14_93); poss(operations_NNS_4_26, its_PRP$_2_12); nn(operations_NNS_4_26, pacemaker_NN_3_16); num(years_NNS_6_41, two_CD_5_37); npadvmod(ago_RB_7_47, years_NNS_6_41); pobj(to_IN_8_51, Ltd._NNP_11_75); nn(Ltd._NNP_11_75, Telectronics_NNP_9_54); nn(Ltd._NNP_11_75, Holding_NNP_10_67); prep(Ltd._NNP_11_75, of_IN_12_80); pobj(of_IN_12_80, Australia_NNP_13_83)")
+      val frames = IndexedSeq(
+         "sell_1.01:[A0=Cordis_0, A1=operations_4, AM-TMP=ago_7, A2=to_8]") map Frame.deserialize(dgraph)
+      srl.synchronized {
+        val extrs = srl.extract(dgraph)(frames).map(_.extr)
+        extrs.map(_.toString) must haveTheSameElementsAs(List("(Cordis; sold; its pacemaker operations; T:two years ago; to Telectronics Holding Ltd. of Australia)"))
+        val transformations = extrs.flatMap(_.transformations(SrlExtraction.PassiveDobj))
+        transformations.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [be] sold; T:two years ago; to Telectronics Holding Ltd. of Australia)"))
+        val triples = transformations.flatMap(_.triplize(true))
+        triples.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [be] sold to Telectronics Holding Ltd. of Australia; T:two years ago)", "(its pacemaker operations; [be] sold; to Telectronics Holding Ltd. of Australia)"))
+      }
+    }
+  }
+
   expectedExtractions(
     sentence = "Microsoft plans on filing a lawsuit against Google in New York.",
     dgraphString = "nsubj(plans_VBZ_1_10, Microsoft_NNP_0_0); prep(plans_VBZ_1_10, on_IN_2_16); punct(plans_VBZ_1_10, ._._11_62); pcomp(on_IN_2_16, filing_VBG_3_19); dobj(filing_VBG_3_19, lawsuit_NN_5_28); det(lawsuit_NN_5_28, a_DT_4_26); prep(lawsuit_NN_5_28, against_IN_6_36); pobj(against_IN_6_36, Google_NNP_7_44); prep(Google_NNP_7_44, in_IN_8_51); pobj(in_IN_8_51, York_NNP_10_58); nn(York_NNP_10_58, New_NNP_9_54)",

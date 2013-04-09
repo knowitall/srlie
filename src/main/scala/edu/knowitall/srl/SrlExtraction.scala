@@ -69,7 +69,7 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
               relation
             } else {
               val tokens = (relation.tokens ++ relArg.tokens).sortBy(_.tokenInterval)
-              val text = tokens.iterator.map(_.text).mkString(" ")
+              val text = relation.text + " " + relArg.tokens.iterator.map(_.text).mkString(" ")
               relation.copy(text = text, tokens = tokens, intervals = relation.intervals :+ relArg.interval)
             }
           new SrlExtraction(rel, this.arg1, arg2s, context, negated)
