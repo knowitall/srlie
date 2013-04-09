@@ -114,6 +114,7 @@ object SrlExtractor extends App {
         for (line <- source.getLines) {
           val graph = graphify(line)
           val insts = srl.apply(graph)
+          val triples = insts.flatMap(_.triplize(true))
 
           if (config.outputFormat == OutputFormat.Standard) {
             writer.println(graph.serialize)
@@ -124,16 +125,18 @@ object SrlExtractor extends App {
             writer.println()
 
             writer.println("triples:")
-            insts.flatMap(_.triplize(true)).map(_.extr) foreach writer.println
+            triples.map(_.extr) foreach writer.println
           } else if (config.outputFormat == OutputFormat.Annotation) {
-            for (inst <- insts) {
+            for (inst <- triples) {
               val extr = inst.extr
-              writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), extr.toString, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+              val string = Iterable(extr.arg1.text, extr.rel.text, extr.arg2s.mkString("; ")).mkString("(", "; ", ")")
+              writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
             }
           } else if (config.outputFormat == OutputFormat.Evaluation) {
-            for (inst <- insts) {
+            for (inst <- triples) {
               val extr = inst.extr
-              writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), conf(inst), extr.toString, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+              val string = Iterable(extr.arg1.text, extr.rel.text, extr.arg2s.mkString("; ")).mkString("(", "; ", ")")
+              writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), conf(inst), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
             }
           }
 
