@@ -65,8 +65,8 @@ object TrainSrlConfidence {
     val sentences = input.map(_._3)
     val inst = sentences map parser.apply flatMap extractor.apply
     val data = inst.flatMap { inst =>
-      gold.get(inst.extr.toString).map { label =>
-      new Labelled(label, inst)
+      gold.get(inst.extr.basicTripleString).map { label =>
+        new Labelled(label, inst)
       }
     }
 

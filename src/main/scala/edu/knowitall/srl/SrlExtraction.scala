@@ -86,8 +86,11 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
     }
   }
 
+  def basicTripleString = {
+    Iterable(arg1.text, relation.text, arg2s.iterator.map(_.text).mkString("; ")).mkString("(", "; ", ")")
+  }
   override def toString = {
-    val parts = Iterable(arg1.text, relation.text, arg2s.iterator.map(_.toString).mkString("; "))
+    val parts = Iterable(arg1.toString, relation.toString, arg2s.iterator.map(_.toString).mkString("; "))
     val prefix = context match {
       case Some(context) => context.text + ":"
       case None => ""
