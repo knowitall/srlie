@@ -129,13 +129,13 @@ object SrlExtractor extends App {
           } else if (config.outputFormat == OutputFormat.Annotation) {
             for (inst <- triples) {
               val extr = inst.extr
-              val string = Iterable(extr.arg1.text, extr.rel.text, extr.arg2s.mkString("; ")).mkString("(", "; ", ")")
+              val string = Iterable(extr.arg1.text, extr.rel.text, extr.arg2s.map(_.text).mkString("; ")).mkString("(", "; ", ")")
               writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
             }
           } else if (config.outputFormat == OutputFormat.Evaluation) {
             for (inst <- triples) {
               val extr = inst.extr
-              val string = Iterable(extr.arg1.text, extr.rel.text, extr.arg2s.mkString("; ")).mkString("(", "; ", ")")
+              val string = Iterable(extr.arg1.text, extr.rel.text, extr.arg2s.map(_.text).mkString("; ")).mkString("(", "; ", ")")
               writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), conf(inst), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
             }
           }
