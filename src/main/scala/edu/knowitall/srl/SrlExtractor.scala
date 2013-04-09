@@ -11,6 +11,8 @@ import edu.knowitall.common.Resource
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.srl.Frame
 import edu.knowitall.tool.srl.Roles
+import edu.knowitall.srl.confidence.SrlConfidenceFunction
+import java.io.PrintWriter
 
 class SrlExtractor(val srl: Srl = new ClearSrl()) {
   def apply(dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
@@ -31,22 +33,31 @@ object SrlExtractor extends App {
   sealed abstract class OutputFormat
   object OutputFormat {
     def apply(format: String): OutputFormat = {
-      format match {
+      format.toLowerCase match {
         case "standard" => Standard
         case "annotation" => Annotation
+        case "evaluation" => Evaluation
         case _ => throw new IllegalArgumentException("Unknown output format: " + format)
       }
     }
 
     case object Standard extends OutputFormat
     case object Annotation extends OutputFormat
+    case object Evaluation extends OutputFormat
   }
 
-  case class Config(inputFile: Option[File] = None, outputFormat: OutputFormat = OutputFormat.Standard, gold: Map[String, Boolean] = Map.empty) {
+  case class Config(inputFile: Option[File] = None, outputFile: Option[File] = None, outputFormat: OutputFormat = OutputFormat.Standard, gold: Map[String, Boolean] = Map.empty) {
     def source() = {
       inputFile match {
         case Some(file) => Source.fromFile(file)
         case None => Source.stdin
+      }
+    }
+
+    def writer() = {
+      outputFile match {
+        case Some(file) => new PrintWriter(file, "UTF8")
+        case None => new PrintWriter(System.out)
       }
     }
   }
@@ -57,6 +68,10 @@ object SrlExtractor extends App {
         val file = new File(string)
         require(file.exists, "input file does not exist: " + file)
         config.copy(inputFile = Some(file))
+      },
+      argOpt("ouput file", "output file") { (string, config) =>
+        val file = new File(string)
+        config.copy(outputFile = Some(file))
       },
       opt("gold", "gold file") { (string, config) =>
         val file = new File(string)
@@ -84,7 +99,8 @@ object SrlExtractor extends App {
 
   def run(config: Config) {
     lazy val parser = new ClearParser()
-    val srl = new ClearSrl()
+    val srl = new SrlExtractor()
+    val conf = SrlConfidenceFunction.loadDefaultClassifier()
 
     def graphify(line: String) = {
       (Exception.catching(classOf[DependencyGraph.SerializationException]) opt DependencyGraph.deserialize(line)) match {
@@ -94,39 +110,31 @@ object SrlExtractor extends App {
     }
 
     Resource.using(config.source()) { source =>
-      for (line <- source.getLines) {
-        val graph = graphify(line)
-        val frames = srl.apply(graph)
-        val hierarchy = FrameHierarchy.fromFrames(graph, frames.toIndexedSeq)
-        val extrs = hierarchy flatMap SrlExtraction.fromFrameHierarchy(graph)
-        val triples = extrs flatMap (_.triplize(true))
+      Resource.using(config.writer()) { writer =>
+        for (line <- source.getLines) {
+          val graph = graphify(line)
+          val insts = srl.apply(graph)
 
-        if (config.outputFormat == OutputFormat.Standard) {
-          println(graph.serialize)
-          println()
+          if (config.outputFormat == OutputFormat.Standard) {
+            writer.println(graph.serialize)
+            writer.println()
 
-          println("frames:")
-          frames.map(_.serialize) foreach println
-          println()
+            writer.println("extractions:")
+            insts.map(_.extr) foreach writer.println
+            writer.println()
 
-          println("hierarchy:")
-          hierarchy foreach println
-          println()
-
-          println("extractions:")
-          extrs foreach println
-          println()
-
-          println("transformations:")
-          extrs.flatMap(_.transformations(SrlExtraction.PassiveDobj)) foreach println
-          println()
-
-          println("triples:")
-          triples foreach println
-        }
-        else if (config.outputFormat == OutputFormat.Annotation) {
-          for (extr <- triples) {
-            println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), extr.toString, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+            writer.println("triples:")
+            insts.flatMap(_.triplize(true)).map(_.extr) foreach writer.println
+          } else if (config.outputFormat == OutputFormat.Annotation) {
+            for (inst <- insts) {
+              val extr = inst.extr
+              writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), extr.toString, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+            }
+          } else if (config.outputFormat == OutputFormat.Evaluation) {
+            for (inst <- insts) {
+              val extr = inst.extr
+              writer.println(Iterable(config.gold.get(extr.toString).map(if (_) 1 else 0).getOrElse(""), conf(inst), extr.toString, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+            }
           }
         }
       }
