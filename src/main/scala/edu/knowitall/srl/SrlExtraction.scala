@@ -147,11 +147,16 @@ object SrlExtraction {
     def intervals: Seq[Interval]
     def span = Interval.span(intervals)
 
+    def tokenIntervals = intervals
+    def tokenSpan = span
+
     override def hashCode = intervals.hashCode * 39 + tokens.hashCode
   }
 
   abstract class SinglePart extends Part {
     def interval: Interval
+
+    def tokenInterval = interval
   }
 
   class Context(val text: String, val tokens: Seq[DependencyNode], val intervals: Seq[Interval]) extends MultiPart {
