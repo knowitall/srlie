@@ -18,7 +18,11 @@ libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-
   "org.specs2" %% "specs2" % "1.12.3" % "test",
   "junit" % "junit" % "4.11" % "test")
 
-resolvers += "sonatype-snapshot" at "https://oss.sonatype.org/content/repositories/snapshots/"
+scalacOptions ++= Seq("-unchecked", "-deprecation")
+
+licenses := Seq("Ollie Software License Agreement" -> url("https://raw.github.com/knowitall/ollie/master/LICENSE"))
+
+homepage := Some(url("https://github.com/knowitall/openie-srl"))
 
 publishMavenStyle := true
 
@@ -29,3 +33,19 @@ publishTo <<= version { (v: String) =>
   else
     Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
+
+pomExtra := (
+  <scm>
+    <url>https://github.com/knowitall/openie-srl</url>
+    <connection>scm:git://github.com/knowitall/openie-srl.git</connection>
+    <developerConnection>scm:git:git@github.com:knowitall/openie-srl.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+  <developers>
+   <developer>
+      <name>Michael Schmitz</name>
+    </developer>
+    <developer>
+      <name>Robert Bart</name>
+    </developer>
+  </developers>)
