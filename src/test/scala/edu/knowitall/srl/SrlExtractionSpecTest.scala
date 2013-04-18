@@ -6,6 +6,7 @@ import org.specs2.runner.JUnitRunner
 import edu.knowitall.tool.parse.ClearParser
 import edu.knowitall.tool.srl.Frame
 import edu.knowitall.tool.parse.graph.DependencyGraph
+import edu.knowitall.tool.srl.FrameHierarchy
 
 @RunWith(classOf[JUnitRunner])
 class SrlExtractionSpecTest extends Specification {
@@ -239,9 +240,9 @@ class SrlExtractionSpecTest extends Specification {
       val frames = IndexedSeq("say_1.01:[A0=Ford_0, A1=removed_14]", "return_4.02:[A0=owners_2, AM-MOD=should_3, A1=cars_6, A2=to_7]", "remove_14.01:[A1=windshields_11, AM-MOD=can_12]", "reinstall_17.01:[A1=windshields_11, AM-MOD=can_12, AM-MNR=securely_16]") map Frame.deserialize(dgraph)
       srl.synchronized {
         val extrs = srl.extract(dgraph)(frames).map(_.extr)
-        extrs.map(_.toString) must haveTheSameElementsAs(List("(the windshields; securely reinstalled; )", "(Ford; said; owners should return the cars to dealers so the windshields can be removed and securely reinstalled)", "Ford said:(the windshields; can be removed; )", "Ford said:(owners; should return; the cars; to dealers)"))
+        extrs.map(_.toString) must haveTheSameElementsAs(List("(the windshields; securely reinstalled; )", "(Ford; said; owners should return the cars to dealers so the windshields can be removed and securely reinstalled)", "Ford said:(the windshields; can be removed; )", "Ford said the windshields can be removed:(owners; should return; the cars; to dealers)"))
         val transformations = extrs.flatMap(_.transformations(SrlExtraction.PassiveDobj))
-        transformations.map(_.toString) must haveTheSameElementsAs(List("Ford said:(the cars; should [be] return; to dealers)"))
+        transformations.map(_.toString) must haveTheSameElementsAs(List("Ford said the windshields can be removed:(the cars; should [be] return; to dealers)"))
       }
     }
   }
@@ -325,4 +326,16 @@ class SrlExtractionSpecTest extends Specification {
     dgraphString = "nsubj(gave_VBD_1_5, John_NNP_0_0); dobj(gave_VBD_1_5, ball_NN_3_14); prep(gave_VBD_1_5, to_IN_4_19); punct(gave_VBD_1_5, ._._6_26); det(ball_NN_3_14, the_DT_2_10); pobj(to_IN_4_19, Paul_NNP_5_22)",
     frameStrings = Seq("give_1.01:[A0=John_0, A1=ball_3, A2=to_4]"),
     expectedTriples = Seq("(John; gave the ball; to Paul)", "(John; gave; the ball)"))
+
+  expectedExtractions(
+    sentence = "She is trying to get the Pope to proclaim that Mary is Co-Redemptrix .",
+    dgraphString = "nsubj(trying_VBG_2_7, She_PRP_0_0); aux(trying_VBG_2_7, is_VBZ_1_4); xcomp(trying_VBG_2_7, get_VB_4_17); punct(trying_VBG_2_7, ._._13_69); aux(get_VB_4_17, to_TO_3_14); ccomp(get_VB_4_17, proclaim_VB_8_33); det(Pope_NNP_6_25, the_DT_5_21); nsubj(proclaim_VB_8_33, Pope_NNP_6_25); aux(proclaim_VB_8_33, to_TO_7_30); ccomp(proclaim_VB_8_33, is_VBZ_11_52); complm(is_VBZ_11_52, that_IN_9_42); nsubj(is_VBZ_11_52, Mary_NNP_10_47); attr(is_VBZ_11_52, Co-Redemptrix_NNP_12_55)",
+    frameStrings = Seq("try_2.01:[A0=She_0, A1=get_4]",
+      "get_4.04:[A0=She_0, A1=proclaim_8]",
+      "proclaim_8.01:[A0=Pope_6, A1=is_11]",
+      "be_11.01:[A1=Mary_10, A2=Co-Redemptrix_12]"),
+    expectedExtractions = Seq("(She; is trying; to get the Pope to proclaim that Mary is Co-Redemptrix)",
+      "She is trying:(She; is trying to get; the Pope to proclaim that Mary is Co-Redemptrix)",
+      "She is trying to get:(the Pope; to proclaim; that Mary is Co-Redemptrix)",
+      "She is trying to get the Pope to proclaim:(Mary; is; Co-Redemptrix)"))
 }

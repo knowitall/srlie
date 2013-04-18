@@ -368,12 +368,20 @@ object SrlExtraction {
             extr +: (subextrs flatMap { subextr =>
               Exception.catching(classOf[IllegalArgumentException]) opt
               {
+                val combinedContext = subextr.context match {
+                  case Some(subcontext) =>
+                      val intervals = (context.intervals ++ subcontext.intervals).toSet.toSeq.sorted
+                      val tokens = (context.tokens ++ subcontext.tokens).toSet
+                      val sortedToken = tokens.toSeq.sortBy(_.tokenInterval)
+                      new Context(sortedToken.iterator.map(_.string).mkString(" "), sortedToken, intervals)
+                  case None => context
+                }
                 if (extr.arg1 == subextr.arg1)
                   // combine the relations to make a more informative relation phrase
-                  SrlExtraction(relation concat subextr.relation, subextr.arg1, subextr.arg2s, Some(context), extr.negated || subextr.negated)
+                  SrlExtraction(relation concat subextr.relation, subextr.arg1, subextr.arg2s, Some(combinedContext), extr.negated || subextr.negated)
                 else
                   // the nested extraction has a different arg1
-                  SrlExtraction(subextr.relation, subextr.arg1, subextr.arg2s, Some(context), subextr.negated)
+                  SrlExtraction(subextr.relation, subextr.arg1, subextr.arg2s, Some(combinedContext), subextr.negated)
               }
             })
           case None => Seq.empty
