@@ -27,6 +27,8 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
     else None
   }
 
+  def intervals = (arg1.interval +: relation.intervals) ++ arg2s.map(_.interval)
+
   def transformations(transformations: Transformation*): Seq[SrlExtraction] = {
     def passiveDobj = {
       for {
@@ -120,12 +122,18 @@ object SrlExtraction {
       throw new IllegalArgumentException("Extraction has no arg1.")
     }
 
-    val arg2s = arguments.filter { arg =>
+    // look for potential arguments that are right of the relation
+    val rightArg2s = arguments.filter { arg =>
       relation.intervals.forall(interval => arg.interval rightOf interval)
     } ++ arguments.filter { arg =>
       !relation.intervals.forall(interval => arg.interval rightOf interval) &&
         (arg.role == Roles.AM_TMP || arg.role == Roles.AM_LOC)
     }
+
+    val arg2s =
+      // if we didn't find any, use any prime arguments that were found
+      if (rightArg2s.isEmpty) arguments.filter(arg => arg != arg1 && (arg.role.label matches "A\\d+"))
+      else rightArg2s
 
     new SrlExtraction(relation, arg1, arg2s, context, negated)
   }
