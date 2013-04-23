@@ -123,7 +123,7 @@ object TrainSrlConfidence {
       println("AUC: " + auc)
       for (i <- 1 to 10) {
         val threshold = 1.0 - i * 0.1
-        println("Y at " + threshold + ": " + points.takeWhile(_._3 > threshold).last._2)
+        println("Y at " + threshold + ": " + points.takeWhile(_._3 > threshold).lastOption.map(_._2).getOrElse("N/A"))
       }
       points foreach { case (conf, y, p) =>
         println(Iterable(conf, y, p).mkString("\t"))
