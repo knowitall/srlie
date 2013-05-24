@@ -114,10 +114,11 @@ object TrainSrlConfidence {
         example <-sentence.insts
         annotation <- gold.get(example.extraction.basicTripleString)
       } yield {
-        (classifier(example), annotation)
+        (classifier(example), annotation, example)
       }
 
-      val points = Analysis.precisionYieldMeta(annotated.sortBy(-_._1))
+      val sorted = annotated.sortBy(-_._1)
+      val points = Analysis.precisionYieldMeta(sorted.map { case (conf, annotation, example) => (conf, annotation) })
       val auc = Analysis.areaUnderCurve(points.map { case (conf, y, p) => (y, p) })
 
       println("AUC: " + auc)
@@ -127,6 +128,11 @@ object TrainSrlConfidence {
       }
       points foreach { case (conf, y, p) =>
         println(Iterable(conf, y, p).mkString("\t"))
+      }
+
+      println("Misclassified:")
+      sorted.filter(_._2 == false) foreach { case (conf, annotation, ex) =>
+        println(("%2f" format conf) + "\t" + ex.extr + "\t" + ex.dgraph.text)
       }
 
       import scalax.chart._
