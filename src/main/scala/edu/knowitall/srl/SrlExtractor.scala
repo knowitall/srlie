@@ -135,7 +135,10 @@ object SrlExtractor extends App {
             writer.println()
 
             writer.println("extractions:")
-            insts.map(_.extr) foreach writer.println
+            insts.foreach { inst =>
+              val score = conf(inst)
+              writer.println(("%1.2f" format score) + ": " + inst.extr)
+            }
             writer.println()
 
             writer.println("triples:")
