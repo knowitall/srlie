@@ -47,26 +47,43 @@ object SrlFeatures {
     }
   }
 
+  object context extends SrlFeature("extraction has context") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.extr.context.isDefined
+    }
+  }
+
+  object activeExtraction extends SrlFeature("active extractor") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      inst.extr.active
+    }
+  }
+
   object naryExtraction extends SrlFeature("nary extraction") {
     override def apply(inst: SrlExtractionInstance): Double = {
       inst.extr.arg2s.size > 1
     }
   }
 
+  object pronoun {
+    def extraPronouns = Set("ive", "im", "things", "thing")
+  }
   object arg1ContainsPronoun extends SrlFeature("arg1 contains a pronoun or EX") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg1.tokens.exists(tok => tok.isPronoun || tok.postag == "EX")
+      inst.extr.arg1.tokens.exists(tok => tok.isPronoun ||
+        tok.postag == "EX" ||
+        pronoun.extraPronouns.contains(tok.string.toLowerCase))
     }
   }
 
   object arg2ContainsPronoun extends SrlFeature("at least one arg2 contains a pronoun or EX") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg2s.exists(_.tokens.exists(tok => tok.isPronoun || tok.postag == "EX"))
+      inst.extr.arg2s.exists(_.tokens.exists(tok => tok.isPronoun || tok.postag == "EX" || tok.string.toLowerCase == "ive"))
     }
   }
 
   object weirdArg {
-    val blacklist = Set("that", "those", "ive")
+    val blacklist = Set("that", "those", "ive", "im")
   }
   object weirdArg1 extends SrlFeature("arg1 is blacklisted") {
     override def apply(inst: SrlExtractionInstance): Double = {
@@ -169,13 +186,13 @@ object SrlFeatures {
     }
   }
 
-  object longSentence extends SrlFeature("sentence contains > 20 nodes") {
+  object longSentence extends SrlFeature("sentence contains > 20 tokens") {
     override def apply(inst: SrlExtractionInstance): Double = {
       inst.dgraph.nodes.size > 20
     }
   }
 
-  object longerSentence extends SrlFeature("sentence contains > 40 nodes") {
+  object longerSentence extends SrlFeature("sentence contains > 40 tokens") {
     override def apply(inst: SrlExtractionInstance): Double = {
       inst.dgraph.nodes.size > 40
     }
@@ -197,6 +214,8 @@ object SrlFeatures {
   }
 
   def features: Seq[SrlFeature] = Seq(
+    context,
+    activeExtraction,
     hierarchicalFrames,
     fewFrameArguments,
     manyFrameArguments,
@@ -219,6 +238,9 @@ object SrlFeatures {
     longRelation,
     longArg1,
     longArg2,
+    shortSentence,
+    longSentence,
+    longerSentence,
     new BadCharacters(inst => inst.extr.arg1, "arg1"),
     new BadCharacters(inst => inst.extr.relation, "rel"))
 
