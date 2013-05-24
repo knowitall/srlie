@@ -214,8 +214,8 @@ object SrlFeatures {
   }
 
   def features: Seq[SrlFeature] = Seq(
-    context,
-    activeExtraction,
+    // context,
+    // activeExtraction,
     hierarchicalFrames,
     fewFrameArguments,
     manyFrameArguments,
@@ -238,9 +238,9 @@ object SrlFeatures {
     longRelation,
     longArg1,
     longArg2,
-    shortSentence,
-    longSentence,
-    longerSentence,
+    // shortSentence,
+    // longSentence,
+    // longerSentence,
     new BadCharacters(inst => inst.extr.arg1, "arg1"),
     new BadCharacters(inst => inst.extr.relation, "rel"))
 
