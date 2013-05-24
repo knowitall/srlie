@@ -10,8 +10,8 @@ scalaVersion <<= crossScalaVersions { (vs: Seq[String]) => vs.head }
 
 resolvers += "Sonatype SNAPSHOTS" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
-libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-srl-clear" % "2.4.2-SNAPSHOT",
-  "edu.washington.cs.knowitall.nlptools" %% "nlptools-conf-breeze" % "2.4.2-SNAPSHOT",
+libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-srl-clear" % "2.4.2",
+  "edu.washington.cs.knowitall.nlptools" %% "nlptools-conf-breeze" % "2.4.2",
   "com.github.scopt" %% "scopt" % "2.1.0",
   "com.github.wookietreiber" %% "scala-chart" % "latest.integration",
   "org.slf4j" % "slf4j-api" % "1.7.2",
