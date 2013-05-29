@@ -1,6 +1,6 @@
 name := "openie-srl"
 
-organization := "edu.washington.cs.knowitall.openiesrl"
+organization := "edu.washington.cs.knowitall.srlie"
 
 version := "1.0.0-SNAPSHOT"
 
