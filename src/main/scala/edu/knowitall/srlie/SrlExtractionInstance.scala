@@ -1,4 +1,4 @@
-package edu.knowitall.srl
+package edu.knowitall.srlie
 
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.parse.graph.DependencyGraph

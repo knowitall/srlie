@@ -1,4 +1,4 @@
-package edu.knowitall.srl
+package edu.knowitall.srlie
 
 import scala.io.Source
 import edu.knowitall.tool.parse.ClearParser
@@ -11,10 +11,10 @@ import edu.knowitall.common.Resource
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.srl.Frame
 import edu.knowitall.tool.srl.Roles
-import edu.knowitall.srl.confidence.SrlConfidenceFunction
+import edu.knowitall.srlie.confidence.SrlConfidenceFunction
 import java.io.PrintWriter
 import java.net.URL
-import edu.knowitall.srl.confidence.SrlFeatureSet
+import edu.knowitall.srlie.confidence.SrlFeatureSet
 
 class SrlExtractor(val srl: Srl = new ClearSrl()) {
   def apply(dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {

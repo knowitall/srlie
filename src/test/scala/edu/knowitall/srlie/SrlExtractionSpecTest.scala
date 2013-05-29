@@ -1,4 +1,4 @@
-package edu.knowitall.srl
+package edu.knowitall.srlie
 
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification

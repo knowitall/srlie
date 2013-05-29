@@ -1,4 +1,4 @@
-package edu.knowitall.srl.confidence
+package edu.knowitall.srlie.confidence
 
 import org.junit.runner.RunWith
 import org.specs2.mutable.Specification
@@ -6,7 +6,7 @@ import org.specs2.runner.JUnitRunner
 import edu.knowitall.tool.parse.ClearParser
 import edu.knowitall.tool.srl.Frame
 import edu.knowitall.tool.parse.graph.DependencyGraph
-import edu.knowitall.srl.SrlExtractor
+import edu.knowitall.srlie.SrlExtractor
 
 @RunWith(classOf[JUnitRunner])
 class SrlConfidenceFunctionTest extends Specification {

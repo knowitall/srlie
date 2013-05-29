@@ -1,4 +1,4 @@
-package edu.knowitall.srl
+package edu.knowitall.srlie
 
 import edu.knowitall.collection.immutable.Interval
 import scala.util.control.Exception
@@ -14,7 +14,7 @@ import edu.knowitall.tool.srl.Roles.R
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.collection.immutable.graph.UpEdge
 import edu.knowitall.collection.immutable.graph.Graph
-import edu.knowitall.srl.SrlExtraction._
+import edu.knowitall.srlie.SrlExtraction._
 import scala.collection.immutable.SortedSet
 import edu.knowitall.tool.tokenize.Token
 

@@ -1,4 +1,4 @@
-package edu.knowitall.srl.confidence
+package edu.knowitall.srlie.confidence
 
 import java.io.File
 import scala.io.Source

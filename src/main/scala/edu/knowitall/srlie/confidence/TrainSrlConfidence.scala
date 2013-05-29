@@ -1,14 +1,14 @@
-package edu.knowitall.srl.confidence
+package edu.knowitall.srlie.confidence
 
 import java.io.File
 import scala.io.Source
 import scopt.mutable.OptionParser
 import edu.knowitall.tool.conf.BreezeLogisticRegressionTrainer
 import edu.knowitall.common.Resource
-import edu.knowitall.srl.SrlExtractor
+import edu.knowitall.srlie.SrlExtractor
 import edu.knowitall.tool.parse.ClearParser
 import edu.knowitall.tool.conf.Labelled
-import edu.knowitall.srl.SrlExtractionInstance
+import edu.knowitall.srlie.SrlExtractionInstance
 import scala.util.Random
 import edu.knowitall.tool.parse.graph.DependencyGraph
 import edu.knowitall.common.Analysis

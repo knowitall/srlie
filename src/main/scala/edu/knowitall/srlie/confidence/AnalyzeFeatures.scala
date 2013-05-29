@@ -1,4 +1,4 @@
-package edu.knowitall.srl.confidence
+package edu.knowitall.srlie.confidence
 
 import java.io.File
 import scala.io.Source
@@ -9,9 +9,9 @@ import edu.knowitall.tool.srl.Srl
 import edu.knowitall.tool.parse.graph.DependencyGraph
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.srl.Frame
-import edu.knowitall.srl.SrlExtractor
-import edu.knowitall.srl.SrlExtraction
-import edu.knowitall.srl.SrlExtractionInstance
+import edu.knowitall.srlie.SrlExtractor
+import edu.knowitall.srlie.SrlExtraction
+import edu.knowitall.srlie.SrlExtractionInstance
 import edu.knowitall.common.Resource
 
 object AnalyzeFeatures extends App {
