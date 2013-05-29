@@ -4,7 +4,7 @@ organization := "edu.washington.cs.knowitall.srlie"
 
 version := "1.0.0-SNAPSHOT"
 
-crossScalaVersions := Seq("2.10.1")
+crossScalaVersions := Seq("2.10.1", "2.9.3")
 
 scalaVersion <<= crossScalaVersions { (vs: Seq[String]) => vs.head }
 
@@ -12,13 +12,20 @@ resolvers += "Sonatype SNAPSHOTS" at "https://oss.sonatype.org/content/repositor
 
 libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-srl-clear" % "2.4.2",
   "edu.washington.cs.knowitall.nlptools" %% "nlptools-conf-breeze" % "2.4.2",
-  "com.github.scopt" %% "scopt" % "2.1.0",
-  "com.github.wookietreiber" %% "scala-chart" % "latest.integration",
+  "com.github.scopt" %% "scopt" % "2.1.0" cross CrossVersion.binaryMapped {
+      case "2.9.3" => "2.9.2"
+      case "2.10.1" => "2.10"
+      case x => x
+    },
   "org.slf4j" % "slf4j-api" % "1.7.2",
   "ch.qos.logback" % "logback-classic" % "1.0.9" % "test",
   "ch.qos.logback" % "logback-core" % "1.0.9" % "test",
-  "org.specs2" %% "specs2" % "1.12.3" % "test",
-  "junit" % "junit" % "4.11" % "test")
+  "junit" % "junit" % "4.11" % "test",
+    "org.specs2" % "specs2" % "1.12.3" % "test" cross CrossVersion.binaryMapped {
+      case "2.9.3" => "2.9.2"
+      case "2.10.1" => "2.10"
+      case x => x
+    })
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 

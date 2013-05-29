@@ -135,6 +135,7 @@ object TrainSrlConfidence {
         println(("%2f" format conf) + "\t" + ex.extr + "\t" + ex.dgraph.text)
       }
 
+      /* Charting code does not work with 2.9.3!
       import scalax.chart._
       import scalax.chart.Charting._
       val pys = points.map { case (conf, y, p) => (y, p) }
@@ -143,6 +144,7 @@ object TrainSrlConfidence {
 
       // save as file and read bytes
       settings.outputFile.foreach { file => chart.saveAsPNG(file, (1024, 768)) }
+      */
 
     } else {
       // train a classifier
