@@ -141,6 +141,8 @@ object SrlExtraction {
   abstract class Part {
     def text: String
     def tokens: Seq[DependencyNode]
+
+    def tokenSpan: Interval
   }
 
   abstract class MultiPart extends Part {
@@ -157,6 +159,10 @@ object SrlExtraction {
     def interval: Interval
 
     def tokenInterval = interval
+    def tokenSpan = tokenInterval
+    def offsets = Interval.open(
+        this.tokens(tokenInterval.start).offsets.start,
+        this.tokens(tokenInterval.end).offsets.end)
   }
 
   class Context(val text: String, val tokens: Seq[DependencyNode], val intervals: Seq[Interval]) extends MultiPart {
