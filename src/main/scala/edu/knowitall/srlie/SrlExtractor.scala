@@ -15,6 +15,7 @@ import edu.knowitall.srlie.confidence.SrlConfidenceFunction
 import java.io.PrintWriter
 import java.net.URL
 import edu.knowitall.srlie.confidence.SrlFeatureSet
+import edu.knowitall.common.Timing
 
 class SrlExtractor(val srl: Srl = new ClearSrl()) {
   def apply(dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
@@ -112,7 +113,7 @@ object SrlExtractor extends App {
   }
 
   def run(config: Config) {
-    lazy val parser = new ClearParser()
+    val parser = new ClearParser()
     val srl = new SrlExtractor()
     val conf = SrlConfidenceFunction.fromUrl(SrlFeatureSet, config.classifierUrl)
 
@@ -125,40 +126,42 @@ object SrlExtractor extends App {
 
     Resource.using(config.source()) { source =>
       Resource.using(config.writer()) { writer =>
-        for (line <- source.getLines) {
-          val graph = graphify(line)
-          val insts = srl.apply(graph)
-          val triples = insts.flatMap(_.triplize(true))
+        Timing.timeThen {
+          for (line <- source.getLines) {
+            val graph = graphify(line)
+            val insts = srl.apply(graph)
+            val triples = insts.flatMap(_.triplize(true))
 
-          if (config.outputFormat == OutputFormat.Standard) {
-            writer.println(graph.serialize)
-            writer.println()
+            if (config.outputFormat == OutputFormat.Standard) {
+              writer.println(graph.serialize)
+              writer.println()
 
-            writer.println("extractions:")
-            insts.foreach { inst =>
-              val score = conf(inst)
-              writer.println(("%1.2f" format score) + ": " + inst.extr)
-            }
-            writer.println()
+              writer.println("extractions:")
+              insts.foreach { inst =>
+                val score = conf(inst)
+                writer.println(("%1.2f" format score) + ": " + inst.extr)
+              }
+              writer.println()
 
-            writer.println("triples:")
-            triples.map(_.extr) foreach writer.println
-          } else if (config.outputFormat == OutputFormat.Annotation) {
-            for (inst <- triples) {
-              val extr = inst.extr
-              val string = extr.basicTripleString
-              writer.println(Iterable(config.gold.get(string).map(if (_) 1 else 0).getOrElse(""), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+              writer.println("triples:")
+              triples.map(_.extr) foreach writer.println
+            } else if (config.outputFormat == OutputFormat.Annotation) {
+              for (inst <- triples) {
+                val extr = inst.extr
+                val string = extr.basicTripleString
+                writer.println(Iterable(config.gold.get(string).map(if (_) 1 else 0).getOrElse(""), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+              }
+            } else if (config.outputFormat == OutputFormat.Evaluation) {
+              for (inst <- triples) {
+                val extr = inst.extr
+                val string = extr.basicTripleString
+                writer.println(Iterable(config.gold.get(string).map(if (_) 1 else 0).getOrElse(""), conf(inst), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+              }
             }
-          } else if (config.outputFormat == OutputFormat.Evaluation) {
-            for (inst <- triples) {
-              val extr = inst.extr
-              val string = extr.basicTripleString
-              writer.println(Iterable(config.gold.get(string).map(if (_) 1 else 0).getOrElse(""), conf(inst), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
-            }
+
+            writer.flush()
           }
-
-          writer.flush()
-        }
+        } { ns => System.err.println("Extractions in: " + Timing.Seconds.format(ns)) }
       }
     }
   }
