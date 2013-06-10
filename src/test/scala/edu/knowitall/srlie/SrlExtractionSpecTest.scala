@@ -339,6 +339,19 @@ class SrlExtractionSpecTest extends Specification {
       "She is trying to get:(the Pope; to proclaim; that Mary is Co-Redemptrix)",
       "She is trying to get the Pope to proclaim:(Mary; is; Co-Redemptrix)"))
 
+      // expl(are_VBP_1_6, There_EX_0_0); attr(are_VBP_1_6, indications_NNS_3_18); amod(indications_NNS_3_18, strong_JJ_2_10); ccomp(indications_NNS_3_18, collaborating_VBG_17_104); nn(Sayyaf_NNP_6_39, Abu_NNP_5_35); punct(Sayyaf_NNP_6_39, ,_,_7_45); conj(Sayyaf_NNP_6_39, Islamiyah_NNP_9_54); nn(Islamiyah_NNP_9_54, Jemaah_NNP_8_47); punct(Islamiyah_NNP_9_54, ,_,_10_63); cc(Islamiyah_NNP_9_54, and_CC_11_65); conj(Islamiyah_NNP_9_54, groups_NNS_14_86); amod(groups_NNS_14_86, other_JJ_12_69); amod(groups_NNS_14_86, terrorist_JJ_13_76); complm(collaborating_VBG_17_104, that_IN_4_30); nsubj(collaborating_VBG_17_104, Sayyaf_NNP_6_39); aux(collaborating_VBG_17_104, are_VBP_15_93); advmod(collaborating_VBG_17_104, really_RB_16_97); xcomp(collaborating_VBG_17_104, have_VB_19_121); aux(have_VB_19_121, to_TO_18_118); dobj(have_VB_19_121, type_NN_22_135); det(type_NN_22_135, a_DT_20_126); amod(type_NN_22_135, common_JJ_21_128); prep(type_NN_22_135, of_IN_23_140); pobj(of_IN_23_140, IED_NN_24_143); nn(Ferro_NNP_27_149, _NNP_26_147); ccomp(said_VBD_28_155, are_VBP_1_6); punct(said_VBD_28_155, ,_,_25_146); nsubj(said_VBD_28_155, Ferro_NNP_27_149); punct(said_VBD_28_155, ._._29_159)
+
+  expectedExtractions(
+    sentence = "There are strong indications that Abu Sayyaf, Jemaah Islamiyah, and other terrorist groups are really collaborating to have a common type of IED, Ferro said.",
+    dgraphString = "expl(are_VBP_1_6, There_EX_0_0); attr(are_VBP_1_6, indications_NNS_3_18); amod(indications_NNS_3_18, strong_JJ_2_10); ccomp(indications_NNS_3_18, collaborating_VBG_17_104); nn(Sayyaf_NNP_6_39, Abu_NNP_5_35); punct(Sayyaf_NNP_6_39, ,_,_7_45); conj(Sayyaf_NNP_6_39, Islamiyah_NNP_9_54); nn(Islamiyah_NNP_9_54, Jemaah_NNP_8_47); punct(Islamiyah_NNP_9_54, ,_,_10_63); cc(Islamiyah_NNP_9_54, and_CC_11_65); conj(Islamiyah_NNP_9_54, groups_NNS_14_86); amod(groups_NNS_14_86, other_JJ_12_69); amod(groups_NNS_14_86, terrorist_JJ_13_76); complm(collaborating_VBG_17_104, that_IN_4_30); nsubj(collaborating_VBG_17_104, Sayyaf_NNP_6_39); aux(collaborating_VBG_17_104, are_VBP_15_93); advmod(collaborating_VBG_17_104, really_RB_16_97); xcomp(collaborating_VBG_17_104, have_VB_19_121); aux(have_VB_19_121, to_TO_18_118); dobj(have_VB_19_121, type_NN_22_135); det(type_NN_22_135, a_DT_20_126); amod(type_NN_22_135, common_JJ_21_128); prep(type_NN_22_135, of_IN_23_140); pobj(of_IN_23_140, IED_NN_24_143); nn(Ferro_NNP_27_149, _NNP_26_147); ccomp(said_VBD_28_155, are_VBP_1_6); punct(said_VBD_28_155, ,_,_25_146); nsubj(said_VBD_28_155, Ferro_NNP_27_149); punct(said_VBD_28_155, ._._29_159)",
+    frameStrings = Seq(
+        "be_1.02:[A1=indications_3]",
+        "collaborate_17.01:[A0=Sayyaf_6, AM-ADV=really_16, A1=have_19]",
+        "have_19.03:[A0=Sayyaf_6, A1=type_22]",
+        "say_28.01:[A1=are_1, A0=Ferro_27]"),
+    expectedExtractions = Seq(
+        "(Abu Sayyaf, Jemaah Islamiyah, and other  terrorist groups; are really collaborating; to have a common type of IED)"))
+
   /*
   expectedExtractions(
     sentence = "I eat ice cream, John said.",
