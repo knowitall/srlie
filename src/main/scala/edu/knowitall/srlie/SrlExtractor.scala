@@ -114,7 +114,8 @@ object SrlExtractor extends App {
 
   def run(config: Config) {
     val parser = new ClearParser()
-    val srl = new SrlExtractor()
+    val srl = new ClearSrl()
+    val srlie = new SrlExtractor(srl)
     val conf = SrlConfidenceFunction.fromUrl(SrlFeatureSet, config.classifierUrl)
 
     def graphify(line: String) = {
@@ -129,11 +130,21 @@ object SrlExtractor extends App {
         Timing.timeThen {
           for (line <- source.getLines) {
             val graph = graphify(line)
-            val insts = srl.apply(graph)
+            val insts = srlie.apply(graph)
             val triples = insts.flatMap(_.triplize(true))
 
             if (config.outputFormat == OutputFormat.Standard) {
               writer.println(graph.serialize)
+              writer.println()
+
+              val frames = srl(graph)
+              writer.println("frames:")
+              frames.map(_.serialize) foreach writer.println
+              writer.println()
+
+              val hierarchy = FrameHierarchy.fromFrames(graph, frames)
+              writer.println("hierarchical frames:")
+              hierarchy foreach writer.println
               writer.println()
 
               writer.println("extractions:")
