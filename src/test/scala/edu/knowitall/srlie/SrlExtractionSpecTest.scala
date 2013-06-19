@@ -211,8 +211,8 @@ class SrlExtractionSpecTest extends Specification {
          "throw_1.01:[A0=NJ_0, A1=ball_3, A2=to_4, AM-TMP=on_6, AM-TMP=after_8]") map Frame.deserialize(dgraph)
       srl.synchronized {
         val extrs = srl.extract(dgraph)(frames).map(_.extr)
-        extrs.flatMap(_.triplize(true)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw; the ball)", "(NJ; threw the ball; to Michae)", "(NJ; threw the ball; T:on Friday)", "(NJ; threw the ball; T:after work)"))
-        extrs.flatMap(_.triplize(false)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw; the ball)", "(NJ; threw; to Michae)", "(NJ; threw; T:on Friday)", "(NJ; threw; T:after work)"))
+        extrs.flatMap(_.triplize(true)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw; the ball)", "(NJ; threw the ball to; Michae)", "(NJ; threw the ball on; T:Friday)", "(NJ; threw the ball after; T:work)"))
+        extrs.flatMap(_.triplize(false)).map(_.toString) must haveTheSameElementsAs(List("(NJ; threw; the ball)", "(NJ; threw to; Michae)", "(NJ; threw on; T:Friday)", "(NJ; threw after; T:work)"))
       }
     }
   }
@@ -228,7 +228,7 @@ class SrlExtractionSpecTest extends Specification {
         val transformations = extrs.flatMap(_.transformations(SrlExtraction.PassiveDobj))
         transformations.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [be] sold; T:two years ago; to Telectronics Holding Ltd. of Australia)"))
         val triples = transformations.flatMap(_.triplize(true))
-        triples.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [be] sold to Telectronics Holding Ltd. of Australia; T:two years ago)", "(its pacemaker operations; [be] sold; to Telectronics Holding Ltd. of Australia)"))
+        triples.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [be] sold to Telectronics Holding Ltd. of Australia; T:two years ago)", "(its pacemaker operations; [be] sold to; Telectronics Holding Ltd. of Australia)"))
       }
     }
   }
@@ -302,10 +302,10 @@ class SrlExtractionSpecTest extends Specification {
       "imagine_5.01:[A0=Americans_3, A1=terrorists_8]",
       "attack_10.01:[A0=terrorists_8, R-A0=who_9, A1=States_13, AM-ADV=armed_18]",
       "arm_18.01:[A1=they_15, A0=by_19]"),
-    expectedTriples = Seq("(The president; asked Americans; to imagine the suicide terrorists)",
+    expectedTriples = Seq("(The president; asked Americans to; imagine the suicide terrorists)",
       "(Americans; to imagine; the suicide terrorists who attacked the United States)",
       "(the suicide terrorists; attacked; the United States)",
-      "(they; had been armed; by Iraq)",
+      "(they; had been armed by; Iraq)",
       "(The president; asked; Americans)"))
 
   expectedExtractions(
@@ -325,7 +325,7 @@ class SrlExtractionSpecTest extends Specification {
     sentence = "John gave the ball to Paul.",
     dgraphString = "nsubj(gave_VBD_1_5, John_NNP_0_0); dobj(gave_VBD_1_5, ball_NN_3_14); prep(gave_VBD_1_5, to_IN_4_19); punct(gave_VBD_1_5, ._._6_26); det(ball_NN_3_14, the_DT_2_10); pobj(to_IN_4_19, Paul_NNP_5_22)",
     frameStrings = Seq("give_1.01:[A0=John_0, A1=ball_3, A2=to_4]"),
-    expectedTriples = Seq("(John; gave the ball; to Paul)", "(John; gave; the ball)"))
+    expectedTriples = Seq("(John; gave the ball to; Paul)", "(John; gave; the ball)"))
 
   expectedExtractions(
     sentence = "She is trying to get the Pope to proclaim that Mary is Co-Redemptrix .",

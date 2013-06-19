@@ -61,7 +61,7 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
     val relArg = if (includeDobj) this.relationArgument else None
 
     val filteredArg2s = (arg2s filterNot (arg2 => relArg.exists(_ == arg2)))
-    if (filteredArg2s.isEmpty) {
+    val tripleExtrs = if (filteredArg2s.isEmpty) {
       Seq(this)
     } else {
       val extrs = relArg match {
@@ -84,6 +84,22 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
       // don't include dobj if we create any intransitives
       if (extrs exists (_.intransitive)) this.triplize(false)
       else extrs
+    }
+
+    // move preposition to relation if it leads the arg2
+    tripleExtrs.map { extr =>
+      extr.arg2s match {
+        case Seq(arg2) if arg2.hasLeadingPreposition =>
+          val leadingPreposition = arg2.leadingPrepositionToken.get
+          val newArg2 = arg2.withoutLeadingPreposition
+          val newRel = extr.rel.copy(
+              text = extr.rel.text + " " + leadingPreposition.text,
+              tokens = extr.rel.tokens :+ leadingPreposition,
+              intervals = extr.rel.intervals :+ Interval.singleton(arg2.interval.start)
+              )
+          extr.copy(relation = newRel, arg2s = Seq(newArg2))
+        case _ => extr
+      }
     }
   }
 
@@ -192,6 +208,26 @@ object SrlExtraction {
         && this.role == that.role)
       case _ => false
     }
+
+    def hasLeadingPreposition: Boolean = {
+      leadingPrepositionToken.isDefined
+    }
+
+    def leadingPrepositionToken: Option[DependencyNode] = {
+      tokens.headOption.filter { head =>
+        head.isPreposition
+        head.isPreposition || head.postag == "TO"
+      }
+    }
+
+    def withoutLeadingPreposition: Argument = {
+      if (!leadingPrepositionToken.isDefined) {
+        this
+      }
+      else {
+        new Argument(tokens.drop(1), Interval.open(interval.start + 1, interval.end), role)
+      }
+    }
   }
 
   class TemporalArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
@@ -201,6 +237,15 @@ object SrlExtraction {
       this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
 
     override def toString = "T:" + super.toString
+
+    override def withoutLeadingPreposition: TemporalArgument = {
+      if (!leadingPrepositionToken.isDefined) {
+        this
+      }
+      else {
+        new TemporalArgument(tokens.drop(1), Interval.open(interval.start + 1, interval.end), role)
+      }
+    }
   }
 
   class LocationArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
@@ -210,6 +255,15 @@ object SrlExtraction {
       this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
 
     override def toString = "L:" + super.toString
+
+    override def withoutLeadingPreposition: LocationArgument = {
+      if (!leadingPrepositionToken.isDefined) {
+        this
+      }
+      else {
+        new LocationArgument(tokens.drop(1), Interval.open(interval.start + 1, interval.end), role)
+      }
+    }
   }
 
   case class Relation(text: String, sense: Option[Sense], tokens: Seq[DependencyNode], intervals: Seq[Interval]) extends MultiPart {
