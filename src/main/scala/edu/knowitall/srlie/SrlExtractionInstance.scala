@@ -8,7 +8,7 @@ case class SrlExtractionInstance(extr: SrlExtraction, frame: FrameHierarchy, dgr
 
   override def toString = extr.toString + " <- " + frame.toString
 
-  def triplize(includeDobj: Boolean = true) = {
+  def triplize(includeDobj: Boolean = true): Seq[SrlExtractionInstance] = {
     extr.triplize(includeDobj).map(extr => this.copy(extr = extr))
   }
 }
