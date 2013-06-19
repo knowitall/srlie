@@ -90,8 +90,11 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
       else extrs
     }
 
-    // move preposition to relation if it leads the arg2
-    tripleExtrs.map { extr =>
+    tripleExtrs.filter { extr =>
+      // filter extractions where the rel overlaps the arg2
+      extr.arg2s.forall(arg2 => extr.rel.intervals.forall(relInterval => !(arg2.interval intersects relInterval)))
+    }.map { extr =>
+      // move preposition to relation if it leads the arg2
       extr.arg2s match {
         case Seq(arg2) if arg2.hasLeadingPreposition =>
           val leadingPreposition = arg2.leadingPrepositionToken.get
