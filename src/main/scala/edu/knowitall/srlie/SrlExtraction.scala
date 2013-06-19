@@ -66,7 +66,6 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
     } else {
       val extrs = relArg match {
         case Some(relArg) => arg2s.map { arg2 =>
-          val arg2s = this.arg2s filterNot (arg => arg != arg2)
           val rel =
             if (arg2 == relArg) {
               relation
@@ -75,11 +74,10 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
               val text = relation.text + " " + relArg.tokens.iterator.map(_.text).mkString(" ")
               relation.copy(text = text, tokens = tokens, intervals = relation.intervals :+ relArg.interval)
             }
-          new SrlExtraction(rel, this.arg1, arg2s, context, negated)
+          new SrlExtraction(rel, this.arg1, Seq(arg2), context, negated)
         }
         case None => filteredArg2s.map { arg2 =>
-          val arg2s = this.arg2s filterNot (arg => arg != arg2)
-          new SrlExtraction(rel, this.arg1, arg2s, context, negated)
+          new SrlExtraction(rel, this.arg1, Seq(arg2), context, negated)
         }
       }
 
