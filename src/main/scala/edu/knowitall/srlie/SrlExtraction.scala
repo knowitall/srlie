@@ -42,8 +42,12 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
         // val a0New = new Argument("[by] " + a0.text, a0.tokens, a0.interval, a0.role)
         val arg2s = /* a0New +: */ this.arg2s.filterNot(_ == a1)
 
+        val inferred =
+          if (arg1.plural) "[were]"
+          else "[was]"
+
         val (before, after) = this.rel.tokens.span(node => node.postag == "MD" || node.text == "has" || node.text == "have")
-        val text = Iterable(before.iterator.map(_.text), Iterable("[be]"), after.iterator.map(_.text)).flatten.mkString(" ")
+        val text = Iterable(before.iterator.map(_.text), Iterable(inferred), after.iterator.map(_.text)).flatten.mkString(" ")
         val rel = new Relation(text, this.rel.sense, this.rel.tokens, this.rel.intervals)
 
         SrlExtraction(rel, a1, arg2s, context, negated)
@@ -207,6 +211,10 @@ object SrlExtraction {
         && this.interval == that.interval
         && this.role == that.role)
       case _ => false
+    }
+
+    def plural = tokens.exists { token =>
+      token.isPluralNoun
     }
 
     def hasLeadingPreposition: Boolean = {
