@@ -326,8 +326,28 @@ object SrlExtraction {
         // expand to certain nodes connected by a conj edge
         (dgraph.graph.superiors(frame.relation.node, edge => edge.label == "conj") - frame.relation.node) flatMap (node => dgraph.graph.inferiors(node, edge => edge.label == "aux" && edge.dest.text == "to") - node)).filter(_.index < frame.relation.node.index)
       val nodeSeq = (remoteNodes ++ nodes ++ additionalNodes).toSeq.sorted
+
+      /**
+       * create a minimal spanning set of the supplied intervals.
+       *
+       * @returns  a sorted minimal spanning set
+       */
+      def minimal(intervals: Iterable[Interval]): List[Interval] = {
+        val set = collection.immutable.SortedSet.empty[Int] ++ intervals.flatten
+        set.foldLeft(List.empty[Interval]) {
+          case (list, i) =>
+            val singleton = Interval.singleton(i)
+            list match {
+              case Nil => List(singleton)
+              case x :: xs if x borders singleton => (x union singleton) :: xs
+              case xs => singleton :: xs
+            }
+        }.reverse
+      }
+
+      val intervals = minimal(nodeSeq.map(_.tokenInterval))
       val text = nodeSeq.iterator.map(_.text).mkString(" ")
-      Relation(text, Some(Sense(frame.relation.name, frame.relation.sense)), nodeSeq, Seq(frame.relation.node.indices))
+      Relation(text, Some(Sense(frame.relation.name, frame.relation.sense)), nodeSeq, intervals)
     }
 
     val mappedArgs = args.map { arg =>
