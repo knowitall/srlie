@@ -30,6 +30,9 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
 
   def intervals = (arg1.interval +: relation.intervals) ++ arg2s.map(_.interval)
 
+  private val bePresentVerbs = Set("am", "are", "is")
+  private val bePastVerbs = Set("was", "were")
+  private val beVerbs = bePastVerbs ++ bePresentVerbs
   def transformations(transformations: Transformation*): Seq[SrlExtraction] = {
     def passiveDobj = {
       for {
@@ -38,15 +41,19 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
 
         a0 = arg1
         if a0.role == Roles.A0
+        if !this.context.isDefined
       } yield {
         // val a0New = new Argument("[by] " + a0.text, a0.tokens, a0.interval, a0.role)
         val arg2s = /* a0New +: */ this.arg2s.filterNot(_ == a1)
 
         val inferred =
-          if (arg1.plural) "[were]"
+          if (this.rel.tokens.exists(token => token.text == "has" || token.text == "have")) "[been]"
+          else if (arg1.plural) "[were]"
           else "[was]"
 
-        val (before, after) = this.rel.tokens.span(node => node.postag == "MD" || node.text == "has" || node.text == "have")
+        val (before, after) = this.rel.tokens.filter { token =>
+          !beVerbs.contains(token.text)
+        }.span(node => node.postag == "MD" || node.text == "has" || node.text == "have")
         val text = Iterable(before.iterator.map(_.text), Iterable(inferred), after.iterator.map(_.text)).flatten.mkString(" ")
         val rel = new Relation(text, this.rel.sense, this.rel.tokens, this.rel.intervals)
 

@@ -226,9 +226,9 @@ class SrlExtractionSpecTest extends Specification {
         val extrs = srl.extract(dgraph)(frames).map(_.extr)
         extrs.map(_.toString) must haveTheSameElementsAs(List("(Cordis; sold; its pacemaker operations; T:two years ago; to Telectronics Holding Ltd. of Australia)"))
         val transformations = extrs.flatMap(_.transformations(SrlExtraction.PassiveDobj))
-        transformations.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [be] sold; T:two years ago; to Telectronics Holding Ltd. of Australia)"))
+        transformations.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [was] sold; T:two years ago; to Telectronics Holding Ltd. of Australia)"))
         val triples = transformations.flatMap(_.triplize(true))
-        triples.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [be] sold to Telectronics Holding Ltd. of Australia; T:two years ago)", "(its pacemaker operations; [be] sold to; Telectronics Holding Ltd. of Australia)"))
+        triples.map(_.toString) must haveTheSameElementsAs(List("(its pacemaker operations; [was] sold to Telectronics Holding Ltd. of Australia; T:two years ago)", "(its pacemaker operations; [was] sold to; Telectronics Holding Ltd. of Australia)"))
       }
     }
   }
@@ -242,7 +242,7 @@ class SrlExtractionSpecTest extends Specification {
         val extrs = srl.extract(dgraph)(frames).map(_.extr)
         extrs.map(_.toString) must haveTheSameElementsAs(List("(the windshields; securely reinstalled; )", "(Ford; said; owners should return the cars to dealers so the windshields can be removed and securely reinstalled)", "Ford said:(the windshields; can be removed; )", "Ford said the windshields can be removed:(owners; should return; the cars; to dealers)"))
         val transformations = extrs.flatMap(_.transformations(SrlExtraction.PassiveDobj))
-        transformations.map(_.toString) must haveTheSameElementsAs(List("Ford said the windshields can be removed:(the cars; should [be] return; to dealers)"))
+        transformations.map(_.toString) must beEmpty
       }
     }
   }
