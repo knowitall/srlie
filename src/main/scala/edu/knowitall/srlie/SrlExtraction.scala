@@ -17,6 +17,7 @@ import edu.knowitall.collection.immutable.graph.Graph
 import edu.knowitall.srlie.SrlExtraction._
 import scala.collection.immutable.SortedSet
 import edu.knowitall.tool.tokenize.Token
+import edu.knowitall.tool.tokenize.Tokenizer
 
 case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument], context: Option[Context], negated: Boolean) {
   def rel = relation
@@ -51,8 +52,7 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
 
     if (transformations.contains(PassiveDobj)) {
       passiveDobj
-    }
-    else {
+    } else {
       Seq.empty
     }
   }
@@ -63,8 +63,7 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
     val filteredArg2s = (arg2s filterNot (arg2 => relArg.exists(_ == arg2)))
     if (filteredArg2s.isEmpty) {
       Seq(this)
-    }
-    else {
+    } else {
       val extrs = relArg match {
         case Some(relArg) => arg2s.map { arg2 =>
           val arg2s = this.arg2s filterNot (arg => arg != arg2)
@@ -161,8 +160,8 @@ object SrlExtraction {
     def tokenInterval = interval
     def tokenSpan = tokenInterval
     def offsets = Interval.open(
-        this.tokens(tokenInterval.start).offsets.start,
-        this.tokens(tokenInterval.end).offsets.end)
+      this.tokens(tokenInterval.start).offsets.start,
+      this.tokens(tokenInterval.end).offsets.end)
   }
 
   class Context(val text: String, val tokens: Seq[DependencyNode], val intervals: Seq[Interval]) extends MultiPart {
@@ -180,6 +179,8 @@ object SrlExtraction {
   }
 
   class Argument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role) extends SinglePart {
+    def this(tokens: Seq[DependencyNode], interval: Interval, role: Role) =
+      this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
     override def toString = text
 
     override def hashCode = interval.hashCode * 39 + tokens.hashCode
@@ -197,11 +198,19 @@ object SrlExtraction {
 
   class TemporalArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
     extends Argument(text, tokens, interval, role) {
+
+    def this(tokens: Seq[DependencyNode], interval: Interval, role: Role) =
+      this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
+
     override def toString = "T:" + super.toString
   }
 
   class LocationArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
     extends Argument(text, tokens, interval, role) {
+
+    def this(tokens: Seq[DependencyNode], interval: Interval, role: Role) =
+      this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
+
     override def toString = "L:" + super.toString
   }
 
@@ -321,7 +330,7 @@ object SrlExtraction {
       val nodes = dgraph.graph.inferiors(frame.relation.node, edge => (Relation.expansionLabels contains edge.label) && !(boundaries contains edge.dest))
       val additionalNodes =
         // sometimes we need to go up a pcomp
-        dgraph.graph.predecessors(frame.relation.node, edge => edge.label == "pcomp" && nodes.exists{node => node.tokenInterval borders edge.source.tokenInterval})
+        dgraph.graph.predecessors(frame.relation.node, edge => edge.label == "pcomp" && nodes.exists { node => node.tokenInterval borders edge.source.tokenInterval })
       val remoteNodes = (
         // expand to certain nodes connected by a conj edge
         (dgraph.graph.superiors(frame.relation.node, edge => edge.label == "conj") - frame.relation.node) flatMap (node => dgraph.graph.inferiors(node, edge => edge.label == "aux" && edge.dest.text == "to") - node)).filter(_.index < frame.relation.node.index)
@@ -362,13 +371,11 @@ object SrlExtraction {
       val nodeSpan = Interval.span(immediateNodes.map(_.tokenInterval) ++ componentNodes.map(_.tokenInterval))
       val nodes = dgraph.nodes.slice(nodeSpan.start, nodeSpan.end)
 
-      val text =
-        dgraph.text.substring(nodes.head.offsets.start, nodes.last.offsets.end)
       val nodeSeq = nodes.toSeq
       arg.role match {
-        case Roles.AM_TMP => new TemporalArgument(text, nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
-        case Roles.AM_LOC => new LocationArgument(text, nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
-        case _ => new Argument(text, nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        case Roles.AM_TMP => new TemporalArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        case Roles.AM_LOC => new LocationArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        case _ => new Argument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
       }
     }
 
@@ -397,31 +404,29 @@ object SrlExtraction {
 
             // triplize to include dobj in rel
             val relation = extr.relationArgument match {
-              case Some(arg)
-                if subextrs.forall(_.arg2s.forall(arg2 => !(arg2.interval intersects arg.interval))) &&
-                (arg.interval borders extr.relation.span)
-                => extr.relation.copy(tokens = arg.tokens ++ extr.relation.tokens, text = extr.relation.text + " " + arg.text)
+              case Some(arg) if subextrs.forall(_.arg2s.forall(arg2 => !(arg2.interval intersects arg.interval))) &&
+                (arg.interval borders extr.relation.span) => extr.relation.copy(tokens = arg.tokens ++ extr.relation.tokens, text = extr.relation.text + " " + arg.text)
               case _ => extr.relation
             }
 
             extr +: (subextrs flatMap { subextr =>
               Exception.catching(classOf[IllegalArgumentException]) opt
-              {
-                val combinedContext = subextr.context match {
-                  case Some(subcontext) =>
+                {
+                  val combinedContext = subextr.context match {
+                    case Some(subcontext) =>
                       val intervals = (context.intervals ++ subcontext.intervals).toSet.toSeq.sorted
                       val tokens = (context.tokens ++ subcontext.tokens).toSet
                       val sortedToken = tokens.toSeq.sortBy(_.tokenInterval)
                       new Context(sortedToken.iterator.map(_.string).mkString(" "), sortedToken, intervals)
-                  case None => context
+                    case None => context
+                  }
+                  if (extr.arg1 == subextr.arg1)
+                    // combine the relations to make a more informative relation phrase
+                    SrlExtraction(relation concat subextr.relation, subextr.arg1, subextr.arg2s, Some(combinedContext), extr.negated || subextr.negated)
+                  else
+                    // the nested extraction has a different arg1
+                    SrlExtraction(subextr.relation, subextr.arg1, subextr.arg2s, Some(combinedContext), subextr.negated)
                 }
-                if (extr.arg1 == subextr.arg1)
-                  // combine the relations to make a more informative relation phrase
-                  SrlExtraction(relation concat subextr.relation, subextr.arg1, subextr.arg2s, Some(combinedContext), extr.negated || subextr.negated)
-                else
-                  // the nested extraction has a different arg1
-                  SrlExtraction(subextr.relation, subextr.arg1, subextr.arg2s, Some(combinedContext), subextr.negated)
-              }
             })
           case None => Seq.empty
         }
