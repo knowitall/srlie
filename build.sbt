@@ -1,4 +1,4 @@
-name := "openie-srl"
+name := "srlie"
 
 organization := "edu.washington.cs.knowitall.srlie"
 
