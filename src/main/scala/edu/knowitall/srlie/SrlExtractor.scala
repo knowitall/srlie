@@ -129,48 +129,61 @@ object SrlExtractor extends App {
       Resource.using(config.writer()) { writer =>
         Timing.timeThen {
           for (line <- source.getLines) {
-            val graph = graphify(line)
-            val insts = srlie.apply(graph)
-            val triples = insts.flatMap(_.triplize(true))
+            try {
+              val graph = graphify(line)
+              val insts = srlie.apply(graph)
+              val triples = insts.flatMap(_.triplize(true))
 
-            if (config.outputFormat == OutputFormat.Standard) {
-              writer.println(graph.serialize)
-              writer.println()
+              if (config.outputFormat == OutputFormat.Standard) {
+                writer.println(graph.serialize)
+                writer.println()
 
-              val frames = srl(graph)
-              writer.println("frames:")
-              frames.map(_.serialize) foreach writer.println
-              writer.println()
+                val frames = srl(graph)
+                writer.println("frames:")
+                frames.map(_.serialize) foreach writer.println
+                writer.println()
 
-              val hierarchy = FrameHierarchy.fromFrames(graph, frames)
-              writer.println("hierarchical frames:")
-              hierarchy foreach writer.println
-              writer.println()
+                val hierarchy = FrameHierarchy.fromFrames(graph, frames)
+                writer.println("hierarchical frames:")
+                hierarchy foreach writer.println
+                writer.println()
 
-              writer.println("extractions:")
-              insts.foreach { inst =>
-                val score = conf(inst)
-                writer.println(("%1.2f" format score) + ": " + inst.extr)
+                writer.println("extractions:")
+                insts.foreach { inst =>
+                  val score = conf(inst)
+                  writer.println(("%1.2f" format score) + ": " + inst.extr)
+                }
+                writer.println()
+
+                writer.println("triples:")
+                triples.map(_.extr) foreach writer.println
+
+                val transformations = insts.flatMap(_.extr.transformations(SrlExtraction.PassiveDobj))
+                if (transformations.size > 0) {
+                  writer.println("transformations:")
+                  transformations foreach writer.println
+                }
+
+                writer.println()
+              } else if (config.outputFormat == OutputFormat.Annotation) {
+                for (inst <- triples) {
+                  val extr = inst.extr
+                  val string = extr.basicTripleString
+                  writer.println(Iterable(config.gold.get(string).map(if (_) 1 else 0).getOrElse(""), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+                }
+              } else if (config.outputFormat == OutputFormat.Evaluation) {
+                for (inst <- triples) {
+                  val extr = inst.extr
+                  val string = extr.basicTripleString
+                  writer.println(Iterable(config.gold.get(string).map(if (_) 1 else 0).getOrElse(""), conf(inst), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
+                }
               }
-              writer.println()
 
-              writer.println("triples:")
-              triples.map(_.extr) foreach writer.println
-            } else if (config.outputFormat == OutputFormat.Annotation) {
-              for (inst <- triples) {
-                val extr = inst.extr
-                val string = extr.basicTripleString
-                writer.println(Iterable(config.gold.get(string).map(if (_) 1 else 0).getOrElse(""), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
-              }
-            } else if (config.outputFormat == OutputFormat.Evaluation) {
-              for (inst <- triples) {
-                val extr = inst.extr
-                val string = extr.basicTripleString
-                writer.println(Iterable(config.gold.get(string).map(if (_) 1 else 0).getOrElse(""), conf(inst), string, extr.arg1, extr.relation, extr.arg2s.mkString("; "), line).mkString("\t"))
-              }
+              writer.flush()
             }
-
-            writer.flush()
+            catch {
+              case e: Exception => e.printStackTrace()
+            }
           }
         } { ns => System.err.println("Extractions in: " + Timing.Seconds.format(ns)) }
       }
