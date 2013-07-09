@@ -110,7 +110,7 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
           // since we are removing text and tokens from the arg2,
           // we might violate a requirement that the text and the
           // number of tokens is non empty.
-          Exception.nonFatalCatch.opt(arg2.withoutLeadingPreposition).map { newArg2 =>
+          Exception.catching(classOf[Exception]).opt(arg2.withoutLeadingPreposition).map { newArg2 =>
             val leadingPreposition = arg2.leadingPrepositionToken.get
             val newRel = extr.rel.copy(
                 text = extr.rel.text + " " + leadingPreposition.text,
