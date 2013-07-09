@@ -56,7 +56,7 @@ object SrlExtractor extends App {
       classifierUrl: URL = SrlConfidenceFunction.defaultModelUrl) {
     def source() = {
       inputFile match {
-        case Some(file) => Source.fromFile(file)
+        case Some(file) => Source.fromFile(file, "UTF8")
         case None => Source.stdin
       }
     }
@@ -83,7 +83,7 @@ object SrlExtractor extends App {
       opt("gold", "gold file") { (string, config) =>
         val file = new File(string)
         require(file.exists, "gold file does not exist: " + file)
-        val gold = Resource.using (Source.fromFile(file)) { source =>
+        val gold = Resource.using (Source.fromFile(file, "UTF8")) { source =>
           (for {
             line <- source.getLines
             (annotation, string) = line.split("\t") match {

@@ -61,7 +61,7 @@ object TrainSrlConfidence {
 
     logger.info("Reading input...")
     val input =
-      Resource.using (Source.fromFile(settings.inputFile)) { source =>
+      Resource.using (Source.fromFile(settings.inputFile, "UTF8")) { source =>
         source.getLines.map { line =>
           val (score, extraction, sentence) =
             line.split("\t") match {
