@@ -327,6 +327,12 @@ class SrlExtractionSpecTest extends Specification {
     frameStrings = Seq("give_1.01:[A0=John_0, A1=ball_3, A2=to_4]"),
     expectedTriples = Seq("(John; gave the ball to; Paul)", "(John; gave; the ball)"))
 
+  expectedTriples(
+    sentence = "Many of the defendants were also ordered to forfeit sums of money ranging from $100,000 to $2,000,000 as proceeds of their unlawful drug trafficking activities.",
+    dgraphString = "prep(Many_JJ_0_0, of_IN_1_5); pobj(of_IN_1_5, defendants_NNS_3_12); det(defendants_NNS_3_12, the_DT_2_8); nsubjpass(ordered_VBN_6_33, Many_JJ_0_0); auxpass(ordered_VBN_6_33, were_VBD_4_23); advmod(ordered_VBN_6_33, also_RB_5_28); prep(ordered_VBN_6_33, to_IN_7_41); punct(ordered_VBN_6_33, ._._27_159); pobj(to_IN_7_41, sums_NNS_9_52); amod(sums_NNS_9_52, forfeit_JJ_8_44); prep(sums_NNS_9_52, of_IN_10_57); partmod(sums_NNS_9_52, ranging_VBG_12_66); pobj(of_IN_10_57, money_NN_11_60); prep(ranging_VBG_12_66, from_IN_13_74); pobj(from_IN_13_74, 2,000,000_CD_18_92); prep(from_IN_13_74, as_IN_19_102); quantmod(2,000,000_CD_18_92, $_$_14_79); number(2,000,000_CD_18_92, 100,000_CD_15_80); quantmod(2,000,000_CD_18_92, to_TO_16_88); quantmod(2,000,000_CD_18_92, $_$_17_91); pobj(as_IN_19_102, proceeds_NNS_20_105); prep(proceeds_NNS_20_105, of_IN_21_114); pobj(of_IN_21_114, activities_NNS_26_149); nn(trafficking_NN_25_137, drug_NN_24_132); poss(activities_NNS_26_149, their_PRP$_22_117); amod(activities_NNS_26_149, unlawful_JJ_23_123); nn(activities_NNS_26_149, trafficking_NN_25_137)",
+    frameStrings = Seq("order_6.01:[A1=Many_0, AM-DIS=also_5, A2=to_7]", "range_12.01:[A1=sums_9, A3=from_13, A4=to_16]"),
+    expectedTriples = Seq("(Many of the defendants; were ordered to; forfeit sums of money)", "(forfeit sums of money; ranging from; $100,000)"))
+
   expectedExtractions(
     sentence = "She is trying to get the Pope to proclaim that Mary is Co-Redemptrix .",
     dgraphString = "nsubj(trying_VBG_2_7, She_PRP_0_0); aux(trying_VBG_2_7, is_VBZ_1_4); xcomp(trying_VBG_2_7, get_VB_4_17); punct(trying_VBG_2_7, ._._13_69); aux(get_VB_4_17, to_TO_3_14); ccomp(get_VB_4_17, proclaim_VB_8_33); det(Pope_NNP_6_25, the_DT_5_21); nsubj(proclaim_VB_8_33, Pope_NNP_6_25); aux(proclaim_VB_8_33, to_TO_7_30); ccomp(proclaim_VB_8_33, is_VBZ_11_52); complm(is_VBZ_11_52, that_IN_9_42); nsubj(is_VBZ_11_52, Mary_NNP_10_47); attr(is_VBZ_11_52, Co-Redemptrix_NNP_12_55)",

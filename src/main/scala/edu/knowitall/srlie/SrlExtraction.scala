@@ -39,6 +39,9 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
         a1 <- arg2s.find(_.role == Roles.A1).toSeq
         a2 <- arg2s.find(_.role == Roles.A2)
 
+        if a1.tokens.exists(token => token.isNoun || token.isPronoun)
+        if a2.tokens.exists(token => token.isNoun || token.isPronoun)
+
         a0 = arg1
         if a0.role == Roles.A0
         if !this.context.isDefined
@@ -100,20 +103,27 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
     tripleExtrs.filter { extr =>
       // filter extractions where the rel overlaps the arg2
       extr.arg2s.forall(arg2 => extr.rel.intervals.forall(relInterval => !(arg2.interval intersects relInterval)))
-    }.map { extr =>
+    }.flatMap { extr =>
       // move preposition to relation if it leads the arg2
       extr.arg2s match {
         case Seq(arg2) if arg2.hasLeadingPreposition =>
-          val leadingPreposition = arg2.leadingPrepositionToken.get
-          val newArg2 = arg2.withoutLeadingPreposition
-          val newRel = extr.rel.copy(
-              text = extr.rel.text + " " + leadingPreposition.text,
-              tokens = extr.rel.tokens :+ leadingPreposition,
-              intervals = extr.rel.intervals :+ Interval.singleton(arg2.interval.start)
-              )
-          extr.copy(relation = newRel, arg2s = Seq(newArg2))
-        case _ => extr
+          // since we are removing text and tokens from the arg2,
+          // we might violate a requirement that the text and the
+          // number of tokens is non empty.
+          Exception.nonFatalCatch.opt(arg2.withoutLeadingPreposition).map { newArg2 =>
+            val leadingPreposition = arg2.leadingPrepositionToken.get
+            val newRel = extr.rel.copy(
+                text = extr.rel.text + " " + leadingPreposition.text,
+                tokens = extr.rel.tokens :+ leadingPreposition,
+                intervals = extr.rel.intervals :+ Interval.singleton(arg2.interval.start)
+                )
+            extr.copy(relation = newRel, arg2s = Seq(newArg2))
+          }
+        case _ => Some(extr)
       }
+    // make sure the arg2 still contains tokens
+    }.filter { extr =>
+      extr.arg2s.forall(!_.tokens.isEmpty)
     }
   }
 
@@ -170,6 +180,9 @@ object SrlExtraction {
     def tokens: Seq[DependencyNode]
 
     def tokenSpan: Interval
+
+    require(!text.isEmpty, "Extraction part text may not be empty.")
+    require(!tokens.isEmpty, "Extraction part tokens may not be empty.")
   }
 
   abstract class MultiPart extends Part {
