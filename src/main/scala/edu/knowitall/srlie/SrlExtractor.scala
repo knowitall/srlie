@@ -102,7 +102,7 @@ object SrlExtractor extends App {
         require(file.exists, "classifier file does not exist: " + file)
         config.copy(classifierUrl = file.toURI.toURL)
       },
-      opt("format", "output format: {standard, annotation}") { (string, config) =>
+      opt("format", "output format: {standard, annotation, evaluation}") { (string, config) =>
         config.copy(outputFormat = OutputFormat(string))
       })
   }
