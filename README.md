@@ -8,7 +8,7 @@ SRL frames are not extractions themselves because they contain many frame argume
 extraction arguments in Open IE.  SRL also does not identify argument boundaries or expand relation verbs
 into relation phrases.
 
-# Concurrency
+## Concurrency
 
 When operating at web scale, parallelism is essential.  While the base SRLIE extractor is immutable and
 thread safe, the underlying SRL system provided by ClearNLP is not threadsafe.
