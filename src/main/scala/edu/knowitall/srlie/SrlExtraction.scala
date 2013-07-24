@@ -201,8 +201,8 @@ object SrlExtraction {
     def tokenInterval = interval
     def tokenSpan = tokenInterval
     def offsets = Interval.open(
-      this.tokens(tokenInterval.start).offsets.start,
-      this.tokens(tokenInterval.end).offsets.end)
+      this.tokens.head.offsets.start,
+      this.tokens.last.offsets.end)
   }
 
   class Context(val text: String, val tokens: Seq[DependencyNode], val intervals: Seq[Interval]) extends MultiPart {

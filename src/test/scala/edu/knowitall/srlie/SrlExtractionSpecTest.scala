@@ -17,7 +17,13 @@ class SrlExtractionSpecTest extends Specification {
       val dgraph = DependencyGraph.deserialize(dgraphString)
       val frames = frameStrings map Frame.deserialize(dgraph)
       srl.synchronized {
-        val extrs = srl.extract(dgraph)(frames).map(_.extr)
+        val insts = srl.extract(dgraph)(frames)
+        val extrs = insts.map(_.extr)
+
+        // make sure character offsets are correct for arguments (args must be contiguous)
+        require(insts.forall(inst => inst.extr.arg1.text == inst.dgraph.text.substring(inst.extr.arg1.offsets.start, inst.extr.arg1.offsets.end)))
+        require(insts.forall(inst => inst.extr.arg2s.forall(arg2 => arg2.text == inst.dgraph.text.substring(arg2.offsets.start, arg2.offsets.end))))
+
         extrs.map(_.toString) must haveTheSameElementsAs(expectedExtractions)
       }
     }
