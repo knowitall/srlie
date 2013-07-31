@@ -54,7 +54,4 @@ pomExtra := (
    <developer>
       <name>Michael Schmitz</name>
     </developer>
-    <developer>
-      <name>Robert Bart</name>
-    </developer>
   </developers>)
