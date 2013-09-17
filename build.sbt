@@ -1,3 +1,7 @@
+import AssemblyKeys._
+
+assemblySettings
+
 name := "srlie"
 
 organization := "edu.washington.cs.knowitall.srlie"
