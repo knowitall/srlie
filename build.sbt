@@ -25,7 +25,7 @@ libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-
   "ch.qos.logback" % "logback-classic" % "1.0.13" % "test",
   "ch.qos.logback" % "logback-core" % "1.0.13" % "test",
   "junit" % "junit" % "4.11" % "test",
-    "org.specs2" % "specs2" % "2.2.2" % "test" cross CrossVersion.binaryMapped {
+    "org.specs2" % "specs2" % "1.12.3" % "test" cross CrossVersion.binaryMapped {
       case "2.9.3" => "2.9.2"
       case "2.10.1" => "2.10"
       case x => x
