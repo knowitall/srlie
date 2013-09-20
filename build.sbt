@@ -22,6 +22,7 @@ libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-
       case x => x
     },
   "org.slf4j" % "slf4j-api" % "1.7.3",
+  "org.scalaz" %% "scalaz-core" % "7.0.3",
   "ch.qos.logback" % "logback-classic" % "1.0.13" % "test",
   "ch.qos.logback" % "logback-core" % "1.0.13" % "test",
   "junit" % "junit" % "4.11" % "test",
