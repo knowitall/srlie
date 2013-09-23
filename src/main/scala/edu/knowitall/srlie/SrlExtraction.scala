@@ -30,6 +30,8 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
 
   def intervals = (arg1.interval +: relation.intervals) ++ arg2s.map(_.interval)
 
+  def tokens = relation.tokens ++ arg1.tokens ++ arg2s.flatMap(_.tokens)
+
   private val bePresentVerbs = Set("am", "are", "is")
   private val bePastVerbs = Set("was", "were")
   private val beVerbs = bePastVerbs ++ bePresentVerbs
