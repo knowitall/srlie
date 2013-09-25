@@ -31,7 +31,7 @@ object SrlNestedExtraction {
     combine(nested)
   }
 
-  def combine(extrs: Seq[SrlNestedExtraction]): Seq[SrlNestedExtraction] = {
+  private def combine(extrs: Seq[SrlNestedExtraction]): Seq[SrlNestedExtraction] = {
     import scalaz.Scalaz._
     import scalaz.Zipper._
 
