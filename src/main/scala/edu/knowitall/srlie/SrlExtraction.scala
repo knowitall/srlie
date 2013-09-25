@@ -185,6 +185,7 @@ object SrlExtraction {
 
     require(!text.isEmpty, "Extraction part text may not be empty.")
     require(!tokens.isEmpty, "Extraction part tokens may not be empty.")
+    require(tokens.sorted == tokens)
   }
 
   abstract class MultiPart extends Part {
@@ -490,7 +491,7 @@ object SrlExtraction {
             // triplize to include dobj in rel
             val relation = extr.relationArgument match {
               case Some(arg) if subextrs.forall(_.arg2s.forall(arg2 => !(arg2.interval intersects arg.interval))) &&
-                (arg.interval borders extr.relation.span) => extr.relation.copy(tokens = arg.tokens ++ extr.relation.tokens, text = extr.relation.text + " " + arg.text)
+                (arg.interval borders extr.relation.span) => extr.relation.copy(tokens = (arg.tokens ++ extr.relation.tokens).sorted, text = extr.relation.text + " " + arg.text)
               case _ => extr.relation
             }
 
