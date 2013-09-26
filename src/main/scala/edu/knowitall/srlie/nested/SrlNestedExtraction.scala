@@ -31,6 +31,13 @@ object SrlNestedExtraction {
     combine(nested)
   }
 
+  /** Combine extractions e1 and e2 where e2's text is e1's arg2 or arg2.
+    *
+    * for all extractions e1,
+    *   look at all the other extractions e2,
+    *     if e1.arg1 == e2.text combine them and repeat
+    *     if e1.arg2 == e2.text combine them and repeat
+    */
   private def combine(extrs: Seq[SrlNestedExtraction]): Seq[SrlNestedExtraction] = {
     import scalaz.Scalaz._
     import scalaz.Zipper._
