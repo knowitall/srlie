@@ -7,9 +7,11 @@ import edu.knowitall.srlie.SrlExtraction
 import edu.knowitall.tool.parse.graph.DependencyNode
 
 case class SrlNestedExtraction(
+  extr: SrlExtraction,
   arg1: SrlNestedArgument,
-  rel: Relation,
   arg2s: Seq[SrlNestedArgument]) {
+
+  def rel = extr.rel
 
   def tokens = {
     nestedArgumentTokens(arg1) ++ rel.tokens ++ arg2s.flatMap(nestedArgumentTokens)
@@ -25,7 +27,7 @@ object SrlNestedExtraction {
 
   def from(extrs: Seq[SrlExtraction]): Seq[SrlNestedExtraction] = {
     val nested = extrs.map { extr =>
-      new SrlNestedExtraction(Left(extr.arg1), extr.rel, extr.arg2s.map(Left(_)))
+      new SrlNestedExtraction(extr, Left(extr.arg1), extr.arg2s.map(Left(_)))
     }
 
     combine(nested)
