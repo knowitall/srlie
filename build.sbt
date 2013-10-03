@@ -14,8 +14,8 @@ scalaVersion <<= crossScalaVersions { (vs: Seq[String]) => vs.head }
 
 resolvers += "Sonatype SNAPSHOTS" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
-libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-srl-clear" % "2.4.2",
-  "edu.washington.cs.knowitall.nlptools" %% "nlptools-conf-breeze" % "2.4.2",
+libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-srl-clear" % "2.4.3",
+  "edu.washington.cs.knowitall.nlptools" %% "nlptools-conf-breeze" % "2.4.3",
   "com.github.scopt" %% "scopt" % "2.1.0" cross CrossVersion.binaryMapped {
       case "2.9.3" => "2.9.2"
       case "2.10.2" => "2.10"
