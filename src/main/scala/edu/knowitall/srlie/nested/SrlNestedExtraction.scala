@@ -12,7 +12,7 @@ case class SrlNestedExtraction(
   arg1: SrlNestedArgument,
   arg2s: Seq[SrlNestedArgument]) {
 
-  override def toString = s"($arg1, $extr.rel, ${arg2s.mkString("; ")})"
+  override def toString = "(" + arg1 + ", " + extr.rel + ", " + arg2s.mkString("; ") + ")"
 
   def rel = extr.rel
 
