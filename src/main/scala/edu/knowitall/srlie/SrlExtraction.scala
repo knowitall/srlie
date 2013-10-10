@@ -228,6 +228,8 @@ object SrlExtraction {
     def interval: Interval
     def role: Role
 
+    override def toString = text
+
     def plural = tokens.exists { token =>
       token.isPluralNoun
     }
