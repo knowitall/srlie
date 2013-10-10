@@ -5,11 +5,14 @@ import edu.knowitall.srlie.SrlExtraction.Argument
 import SrlNestedExtraction._
 import edu.knowitall.srlie.SrlExtraction
 import edu.knowitall.tool.parse.graph.DependencyNode
+import edu.knowitall.collection.immutable.Interval
 
 case class SrlNestedExtraction(
   extr: SrlExtraction,
   arg1: SrlNestedArgument,
   arg2s: Seq[SrlNestedArgument]) {
+
+  override def toString = s"($arg1, $extr.rel, ${arg2s.mkString("; ")})"
 
   def rel = extr.rel
 

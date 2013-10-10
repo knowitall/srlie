@@ -222,22 +222,11 @@ object SrlExtraction {
     }
   }
 
-  class Argument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role) extends SinglePart {
-    def this(tokens: Seq[DependencyNode], interval: Interval, role: Role) =
-      this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
-    override def toString = text
-
-    override def hashCode = interval.hashCode * 39 + tokens.hashCode
-    def canEqual(that: Any): Boolean = that.isInstanceOf[Argument]
-    override def equals(that: Any): Boolean = that match {
-      case that: Argument => (
-        that.canEqual(this)
-        && this.text == that.text
-        && this.tokens == that.tokens
-        && this.interval == that.interval
-        && this.role == that.role)
-      case _ => false
-    }
+  abstract class Argument extends SinglePart {
+    def text: String
+    def tokens: Seq[DependencyNode]
+    def interval: Interval
+    def role: Role
 
     def plural = tokens.exists { token =>
       token.isPluralNoun
@@ -259,13 +248,21 @@ object SrlExtraction {
         this
       }
       else {
-        new Argument(tokens.drop(1), Interval.open(interval.start + 1, interval.end), role)
+        new SimpleArgument(tokens.drop(1), Interval.open(interval.start + 1, interval.end), role)
       }
     }
   }
 
-  class TemporalArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
-    extends Argument(text, tokens, interval, role) {
+  abstract class SemanticArgument extends Argument
+
+  case class SimpleArgument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role) extends Argument {
+    def this(tokens: Seq[DependencyNode], interval: Interval, role: Role) =
+      this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
+    override def toString = text
+  }
+
+  case class TemporalArgument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role)
+    extends SemanticArgument {
 
     def this(tokens: Seq[DependencyNode], interval: Interval, role: Role) =
       this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
@@ -282,8 +279,8 @@ object SrlExtraction {
     }
   }
 
-  class LocationArgument(text: String, tokens: Seq[DependencyNode], interval: Interval, role: Role)
-    extends Argument(text, tokens, interval, role) {
+  case class LocationArgument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role)
+    extends SemanticArgument {
 
     def this(tokens: Seq[DependencyNode], interval: Interval, role: Role) =
       this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
@@ -461,7 +458,7 @@ object SrlExtraction {
       arg.role match {
         case Roles.AM_TMP => new TemporalArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
         case Roles.AM_LOC => new LocationArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
-        case _ => new Argument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        case _ => new SimpleArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
       }
     }
 
