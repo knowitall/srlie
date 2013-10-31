@@ -6,9 +6,7 @@ name := "srlie"
 
 organization := "edu.washington.cs.knowitall.srlie"
 
-version := "1.0.2-SNAPSHOT"
-
-crossScalaVersions := Seq("2.10.2", "2.9.3")
+crossScalaVersions := Seq("2.10.3")
 
 scalaVersion <<= crossScalaVersions { (vs: Seq[String]) => vs.head }
 
