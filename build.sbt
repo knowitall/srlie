@@ -2,6 +2,8 @@ import AssemblyKeys._
 
 assemblySettings
 
+ReleaseSettings.defaults
+
 name := "srlie"
 
 organization := "edu.washington.cs.knowitall.srlie"
