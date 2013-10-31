@@ -240,8 +240,7 @@ object SrlExtraction {
 
     def leadingPrepositionToken: Option[DependencyNode] = {
       tokens.headOption.filter { head =>
-        head.isPreposition
-        head.isPreposition || head.postag == "TO"
+        head.postag == "IN" || head.postag == "TO"
       }
     }
 
