@@ -13,10 +13,10 @@ into relation phrases.
 SRLIE is composed of a layer of functions on the input sentence.
 
 1.  First the sentences is processed by a dependency parser.
-1.  Next the dependency graph is run through a SRL system to produce SRL Frames.
-2.  Then the frames are sent through SRLIE to produce n-ary extractions.  This involves filtering some SRL frames, determing argument boundaries, and constructing a relation phrase.
-  a.  Optionally the n-ary extractions can be sent through a conversion to produce triples.
-  b.  Optionally the n-ary extractions can be sent through a conversion to produce nested n-ary extractions.
+2.  Next the dependency graph is run through a SRL system to produce SRL Frames.
+3.  Then the frames are sent through SRLIE to produce n-ary extractions.  This involves filtering some SRL frames, determing argument boundaries, and constructing a relation phrase.
+ 1.  Optionally the n-ary extractions can be sent through a conversion to produce triples.
+ 2.  Optionally the n-ary extractions can be sent through a conversion to produce nested n-ary extractions.
 
 ## Concurrency
 
