@@ -116,7 +116,7 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
             val leadingPreposition = arg2.leadingPrepositionToken.get
             val newRel = extr.rel.copy(
                 text = extr.rel.text + " " + leadingPreposition.text,
-                tokens = extr.rel.tokens :+ leadingPreposition,
+                tokens = (extr.rel.tokens :+ leadingPreposition).sorted,
                 intervals = extr.rel.intervals :+ Interval.singleton(arg2.interval.start)
                 )
             extr.copy(relation = newRel, arg2s = Seq(newArg2))
