@@ -443,27 +443,28 @@ object SrlExtraction {
       Relation(text, Some(Sense(frame.relation.name, frame.relation.sense)), nodeSeq, intervals)
     }
 
-    val mappedArgs = args.map { arg =>
-      val immediateNodes =
-        // expand along certain contiguous nodes
-        contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down && !(forbiddenEdgeLabel contains dedge.edge.label), boundaries)
+    Exception.catching(classOf[IllegalArgumentException]) opt {
+      val mappedArgs = args.map { arg =>
+        val immediateNodes =
+          // expand along certain contiguous nodes
+          contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down && !(forbiddenEdgeLabel contains dedge.edge.label), boundaries)
 
-      val componentNodes: Set[List[DependencyNode]] =
-        if (immediateNodes.exists(_.isProperNoun)) Set.empty
-        else components(dgraph, arg.node, componentEdgeLabels, boundaries, false)
+        val componentNodes: Set[List[DependencyNode]] =
+          if (immediateNodes.exists(_.isProperNoun)) Set.empty
+          else components(dgraph, arg.node, componentEdgeLabels, boundaries, false)
 
-      val nodeSpan = Interval.span(immediateNodes.map(_.tokenInterval) ++ componentNodes.map(_.tokenInterval))
-      val nodes = dgraph.nodes.slice(nodeSpan.start, nodeSpan.end)
+        val nodeSpan = Interval.span(immediateNodes.map(_.tokenInterval) ++ componentNodes.map(_.tokenInterval))
+        val nodes = dgraph.nodes.slice(nodeSpan.start, nodeSpan.end)
 
-      val nodeSeq = nodes.toSeq
-      arg.role match {
-        case Roles.AM_TMP => new TemporalArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
-        case Roles.AM_LOC => new LocationArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
-        case _ => new SimpleArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        val nodeSeq = nodes.toSeq
+        arg.role match {
+          case Roles.AM_TMP => new TemporalArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+          case Roles.AM_LOC => new LocationArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+          case _ => new SimpleArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        }
       }
+      SrlExtraction.create(rel, mappedArgs, None, negated)
     }
-
-    Exception.catching(classOf[IllegalArgumentException]) opt SrlExtraction.create(rel, mappedArgs, None, negated)
   }
 
   def fromFrameHierarchy(dgraph: DependencyGraph)(frameh: FrameHierarchy): Seq[SrlExtraction] = {
