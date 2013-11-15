@@ -119,7 +119,7 @@ object SrlExtractor extends App {
     val conf = SrlConfidenceFunction.fromUrl(SrlFeatureSet, config.classifierUrl)
 
     def graphify(line: String) = {
-      (Exception.catching(classOf[DependencyGraph.SerializationException]) opt DependencyGraph.deserialize(line)) match {
+      (Exception.catching(classOf[DependencyGraph.SerializationException]) opt DependencyGraph.stringFormat.read(line)) match {
         case Some(graph) => graph
         case None => parser.dependencyGraph(line)
       }
@@ -135,7 +135,7 @@ object SrlExtractor extends App {
               val triples = insts.flatMap(_.triplize(true))
 
               if (config.outputFormat == OutputFormat.Standard) {
-                writer.println(graph.serialize)
+                writer.println(DependencyGraph.stringFormat.write(graph))
                 writer.println()
 
                 val frames = srl(graph)
