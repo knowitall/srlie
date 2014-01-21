@@ -22,11 +22,6 @@ libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-
       case x => x
     },
   "org.slf4j" % "slf4j-api" % "1.7.3",
-  "org.scalaz" %% "scalaz-core" % "7.0.3" cross CrossVersion.binaryMapped {
-      case "2.9.3" => "2.9.2"
-      case "2.10.2" => "2.10"
-      case x => x
-    },
   "ch.qos.logback" % "logback-classic" % "1.0.13" % "test",
   "ch.qos.logback" % "logback-core" % "1.0.13" % "test",
   "junit" % "junit" % "4.11" % "test",
