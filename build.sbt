@@ -6,7 +6,7 @@ ReleaseSettings.defaults
 
 name := "srlie"
 
-organization := "edu.washington.cs.knowitall.srlie"
+organization := "org.allenai.srlie"
 
 crossScalaVersions := Seq("2.10.3")
 
