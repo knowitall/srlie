@@ -83,7 +83,7 @@ object SrlExtractor extends App {
     }
   }
 
-  def graphify(parser: DependencyParser)(line: String) = {
+  def graphify(parser: DependencyParser)(line: String): (Seq[Lemmatized[PostaggedToken]], DependencyGraph) = {
     val (tokens, graph) = parser.dependencyGraph(line)
     (tokens map MorphaStemmer.lemmatizePostaggedToken, graph)
   }
