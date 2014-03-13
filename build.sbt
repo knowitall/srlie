@@ -17,12 +17,8 @@ resolvers += "Sonatype SNAPSHOTS" at "https://oss.sonatype.org/content/repositor
 libraryDependencies ++= Seq("org.allenai.nlptools" %% "nlptools-srl-clear" % "2.5.0-SNAPSHOT",
   "org.allenai.nlptools" %% "nlptools-conf-breeze" % "2.5.0-SNAPSHOT",
   "org.allenai.nlptools" %% "nlptools-stem-morpha" % "2.5.0-SNAPSHOT",
-  "com.github.scopt" %% "scopt" % "2.1.0" cross CrossVersion.binaryMapped {
-      case "2.9.3" => "2.9.2"
-      case "2.10.2" => "2.10"
-      case x => x
-    },
-  "org.slf4j" % "slf4j-api" % "1.7.3",
+  "com.github.scopt" %% "scopt" % "3.2.0",
+  "org.slf4j" % "slf4j-api" % "1.7.6",
   "ch.qos.logback" % "logback-classic" % "1.0.13" % "test",
   "ch.qos.logback" % "logback-core" % "1.0.13" % "test",
   "junit" % "junit" % "4.11" % "test",

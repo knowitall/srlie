@@ -1,19 +1,14 @@
 package edu.knowitall.srlie
 
-import scala.io.Source
 import edu.knowitall.tool.parse.ClearParser
 import edu.knowitall.tool.srl.ClearSrl
 import edu.knowitall.tool.srl.Srl
 import edu.knowitall.tool.parse.graph.DependencyGraph
-import scala.util.control.Exception
-import java.io.File
 import edu.knowitall.common.Resource
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.srl.Frame
 import edu.knowitall.tool.srl.Roles
 import edu.knowitall.srlie.confidence.SrlConfidenceFunction
-import java.io.PrintWriter
-import java.net.URL
 import edu.knowitall.srlie.confidence.SrlFeatureSet
 import edu.knowitall.common.Timing
 import edu.knowitall.tool.stem.MorphaStemmer
@@ -21,6 +16,13 @@ import edu.knowitall.tool.stem.Lemmatized
 import edu.knowitall.tool.postag.PostaggedToken
 import edu.knowitall.tool.parse.DependencyParser
 import edu.knowitall.tool.tokenize.Tokenizer
+import edu.knowitall.tool.parse.RemoteDependencyParser
+
+import java.io.File
+import java.io.PrintWriter
+import java.net.URL
+import scala.io.Source
+import scala.util.control.Exception
 
 class SrlExtractor(val srl: Srl = new ClearSrl()) {
   def lemmatizeAndApply(tokens: Seq[PostaggedToken], dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
@@ -59,10 +61,11 @@ object SrlExtractor extends App {
   }
 
   case class Config(inputFile: Option[File] = None,
-      outputFile: Option[File] = None,
-      outputFormat: OutputFormat = OutputFormat.Standard,
-      gold: Map[String, Boolean] = Map.empty,
-      classifierUrl: URL = SrlConfidenceFunction.defaultModelUrl) {
+    outputFile: Option[File] = None,
+    outputFormat: OutputFormat = OutputFormat.Standard,
+    gold: Map[String, Boolean] = Map.empty,
+    remoteParser: Option[URL] = None,
+    classifierUrl: URL = SrlConfidenceFunction.defaultModelUrl) {
     def source() = {
       inputFile match {
         case Some(file) => Source.fromFile(file, "UTF8")
@@ -83,25 +86,24 @@ object SrlExtractor extends App {
     (tokens map MorphaStemmer.lemmatizePostaggedToken, graph)
   }
 
-  val argumentParser = new scopt.immutable.OptionParser[Config]("srl-ie") {
-    def options = Seq(
-      argOpt("input file", "input file") { (string, config) =>
+  val argumentParser = new scopt.OptionParser[Config]("srl-ie") {
+      opt[String]('i', "input-file") action { (string, config) =>
         val file = new File(string)
         require(file.exists, "input file does not exist: " + file)
         config.copy(inputFile = Some(file))
-      },
-      argOpt("ouput file", "output file") { (string, config) =>
+      }
+      opt[String]('o', "ouput-file") action { (string, config) =>
         val file = new File(string)
         config.copy(outputFile = Some(file))
-      },
-      opt("gold", "gold file") { (string, config) =>
+      }
+      opt[String]('g', "gold") action { (string, config) =>
         val file = new File(string)
         require(file.exists, "gold file does not exist: " + file)
-        val gold = Resource.using (Source.fromFile(file, "UTF8")) { source =>
+        val gold = Resource.using(Source.fromFile(file, "UTF8")) { source =>
           (for {
             line <- source.getLines
             (annotation, string) = line.split("\t") match {
-              case Array(annotation, string, _ @ _*) => (annotation, string)
+              case Array(annotation, string, _@ _*) => (annotation, string)
               case _ => throw new MatchError("Could not parse gold entry: " + line)
             }
             boolean = if (annotation == "1") true else false
@@ -110,15 +112,18 @@ object SrlExtractor extends App {
           }).toMap
         }
         config.copy(gold = gold)
-      },
-      opt("classifier", "url to classifier model") { (string, config) =>
+      }
+      opt[String]('p', "remote-parser") text("URL to parser server") action { (string, config) =>
+        config.copy(remoteParser = Some(new URL(string)))
+      }
+      opt[String]('c', "classifier") text("url to classifier model") action { (string, config) =>
         val file = new File(string)
         require(file.exists, "classifier file does not exist: " + file)
         config.copy(classifierUrl = file.toURI.toURL)
-      },
-      opt("format", "output format: {standard, annotation, evaluation}") { (string, config) =>
+      }
+      opt[String]('f', "format") text("output format: {standard, annotation, evaluation}") action { (string, config) =>
         config.copy(outputFormat = OutputFormat(string))
-      })
+      }
   }
 
   argumentParser.parse(args, Config()) match {
@@ -128,7 +133,10 @@ object SrlExtractor extends App {
 
   def run(config: Config) {
     import scala.concurrent.ExecutionContext.Implicits.global
-    val parser = new ClearParser()
+    val parser = config.remoteParser match {
+      case Some(url) => new RemoteDependencyParser(url.toString)
+      case None => new ClearParser()
+    }
     val srl = new ClearSrl()
     val srlie = new SrlExtractor(srl)
     val conf = SrlConfidenceFunction.fromUrl(SrlFeatureSet, config.classifierUrl)
@@ -188,8 +196,7 @@ object SrlExtractor extends App {
               }
 
               writer.flush()
-            }
-            catch {
+            } catch {
               case e: Exception => e.printStackTrace()
             }
           }
