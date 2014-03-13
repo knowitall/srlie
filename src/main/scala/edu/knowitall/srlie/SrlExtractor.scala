@@ -1,33 +1,45 @@
 package edu.knowitall.srlie
 
-import scala.io.Source
 import edu.knowitall.tool.parse.ClearParser
 import edu.knowitall.tool.srl.ClearSrl
 import edu.knowitall.tool.srl.Srl
 import edu.knowitall.tool.parse.graph.DependencyGraph
-import scala.util.control.Exception
-import java.io.File
 import edu.knowitall.common.Resource
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.srl.Frame
 import edu.knowitall.tool.srl.Roles
+import edu.knowitall.tool.srl.RemoteSrl
 import edu.knowitall.srlie.confidence.SrlConfidenceFunction
-import java.io.PrintWriter
-import java.net.URL
 import edu.knowitall.srlie.confidence.SrlFeatureSet
 import edu.knowitall.common.Timing
+import edu.knowitall.tool.stem.MorphaStemmer
+import edu.knowitall.tool.stem.Lemmatized
+import edu.knowitall.tool.postag.PostaggedToken
+import edu.knowitall.tool.parse.DependencyParser
+import edu.knowitall.tool.tokenize.Tokenizer
+import edu.knowitall.tool.parse.RemoteDependencyParser
+
+import java.io.File
+import java.io.PrintWriter
+import java.net.URL
+import scala.io.Source
+import scala.util.control.Exception
 
 class SrlExtractor(val srl: Srl = new ClearSrl()) {
-  def apply(dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
-    val frames = srl.apply(dgraph)
-    this.extract(dgraph)(frames)
+  def lemmatizeAndApply(tokens: Seq[PostaggedToken], dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
+    this.apply(tokens map MorphaStemmer.lemmatizePostaggedToken, dgraph)
   }
 
-  def extract(dgraph: DependencyGraph)(frames: Seq[Frame]) = {
+  def apply(tokens: Seq[Lemmatized[PostaggedToken]], dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
+    val frames = srl.apply(tokens map (_.token), dgraph)
+    this.extract(tokens, dgraph)(frames)
+  }
+
+  def extract(tokens: Seq[Lemmatized[PostaggedToken]], dgraph: DependencyGraph)(frames: Seq[Frame]) = {
     val hierarchy = FrameHierarchy.fromFrames(dgraph, frames).toSeq
     hierarchy.flatMap { hierarchy =>
-      val extrs = SrlExtraction.fromFrameHierarchy(dgraph)(hierarchy)
-      extrs.map { extr => SrlExtractionInstance(extr, hierarchy, dgraph) }
+      val extrs = SrlExtraction.fromFrameHierarchy(tokens, dgraph)(hierarchy)
+      extrs.map { extr => SrlExtractionInstance(extr, Tokenizer.originalText(tokens map (_.token)), hierarchy, dgraph) }
     }
   }
 }
@@ -50,10 +62,12 @@ object SrlExtractor extends App {
   }
 
   case class Config(inputFile: Option[File] = None,
-      outputFile: Option[File] = None,
-      outputFormat: OutputFormat = OutputFormat.Standard,
-      gold: Map[String, Boolean] = Map.empty,
-      classifierUrl: URL = SrlConfidenceFunction.defaultModelUrl) {
+    outputFile: Option[File] = None,
+    outputFormat: OutputFormat = OutputFormat.Standard,
+    gold: Map[String, Boolean] = Map.empty,
+    remoteParser: Option[URL] = None,
+    remoteSrl: Option[URL] = None,
+    classifierUrl: URL = SrlConfidenceFunction.defaultModelUrl) {
     def source() = {
       inputFile match {
         case Some(file) => Source.fromFile(file, "UTF8")
@@ -69,25 +83,29 @@ object SrlExtractor extends App {
     }
   }
 
-  val argumentParser = new scopt.immutable.OptionParser[Config]("srl-ie") {
-    def options = Seq(
-      argOpt("input file", "input file") { (string, config) =>
+  def graphify(parser: DependencyParser)(line: String): (Seq[Lemmatized[PostaggedToken]], DependencyGraph) = {
+    val (tokens, graph) = parser.dependencyGraph(line)
+    (tokens map MorphaStemmer.lemmatizePostaggedToken, graph)
+  }
+
+  val argumentParser = new scopt.OptionParser[Config]("srl-ie") {
+      opt[String]('i', "input-file") action { (string, config) =>
         val file = new File(string)
         require(file.exists, "input file does not exist: " + file)
         config.copy(inputFile = Some(file))
-      },
-      argOpt("ouput file", "output file") { (string, config) =>
+      }
+      opt[String]('o', "ouput-file") action { (string, config) =>
         val file = new File(string)
         config.copy(outputFile = Some(file))
-      },
-      opt("gold", "gold file") { (string, config) =>
+      }
+      opt[String]('g', "gold") action { (string, config) =>
         val file = new File(string)
         require(file.exists, "gold file does not exist: " + file)
-        val gold = Resource.using (Source.fromFile(file, "UTF8")) { source =>
+        val gold = Resource.using(Source.fromFile(file, "UTF8")) { source =>
           (for {
             line <- source.getLines
             (annotation, string) = line.split("\t") match {
-              case Array(annotation, string, _ @ _*) => (annotation, string)
+              case Array(annotation, string, _@ _*) => (annotation, string)
               case _ => throw new MatchError("Could not parse gold entry: " + line)
             }
             boolean = if (annotation == "1") true else false
@@ -96,15 +114,21 @@ object SrlExtractor extends App {
           }).toMap
         }
         config.copy(gold = gold)
-      },
-      opt("classifier", "url to classifier model") { (string, config) =>
+      }
+      opt[String]('p', "remote-parser") text("URL to parser server") action { (string, config) =>
+        config.copy(remoteParser = Some(new URL(string)))
+      }
+      opt[String]('s', "remote-srl") text("URL to srl server") action { (string, config) =>
+        config.copy(remoteSrl = Some(new URL(string)))
+      }
+      opt[String]('c', "classifier") text("url to classifier model") action { (string, config) =>
         val file = new File(string)
         require(file.exists, "classifier file does not exist: " + file)
         config.copy(classifierUrl = file.toURI.toURL)
-      },
-      opt("format", "output format: {standard, annotation, evaluation}") { (string, config) =>
+      }
+      opt[String]('f', "format") text("output format: {standard, annotation, evaluation}") action { (string, config) =>
         config.copy(outputFormat = OutputFormat(string))
-      })
+      }
   }
 
   argumentParser.parse(args, Config()) match {
@@ -113,32 +137,32 @@ object SrlExtractor extends App {
   }
 
   def run(config: Config) {
-    val parser = new ClearParser()
-    val srl = new ClearSrl()
+    import scala.concurrent.ExecutionContext.Implicits.global
+    val parser = config.remoteParser match {
+      case Some(url) => new RemoteDependencyParser(url.toString)
+      case None => new ClearParser()
+    }
+    val srl = config.remoteSrl match {
+      case Some(url) => new RemoteSrl(url.toString)
+      case None => new ClearSrl()
+    }
     val srlie = new SrlExtractor(srl)
     val conf = SrlConfidenceFunction.fromUrl(SrlFeatureSet, config.classifierUrl)
-
-    def graphify(line: String) = {
-      (Exception.catching(classOf[DependencyGraph.SerializationException]) opt DependencyGraph.deserialize(line)) match {
-        case Some(graph) => graph
-        case None => parser.dependencyGraph(line)
-      }
-    }
 
     Resource.using(config.source()) { source =>
       Resource.using(config.writer()) { writer =>
         Timing.timeThen {
           for (line <- source.getLines) {
             try {
-              val graph = graphify(line)
-              val insts = srlie.apply(graph)
+              val (tokens, graph) = graphify(parser)(line)
+              val insts = srlie.apply(tokens, graph)
               val triples = insts.flatMap(_.triplize(true))
 
               if (config.outputFormat == OutputFormat.Standard) {
-                writer.println(graph.serialize)
+                writer.println(DependencyGraph.singlelineStringFormat.write(graph))
                 writer.println()
 
-                val frames = srl(graph)
+                val frames = srl(tokens map (_.token), graph)
                 writer.println("frames:")
                 frames.map(_.serialize) foreach writer.println
                 writer.println()
@@ -180,8 +204,7 @@ object SrlExtractor extends App {
               }
 
               writer.flush()
-            }
-            catch {
+            } catch {
               case e: Exception => e.printStackTrace()
             }
           }

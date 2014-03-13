@@ -2,7 +2,6 @@ package edu.knowitall.srlie.confidence
 
 import java.io.File
 import scala.io.Source
-import scopt.mutable.OptionParser
 import edu.knowitall.tool.conf.BreezeLogisticRegressionTrainer
 import edu.knowitall.common.Resource
 import edu.knowitall.srlie.SrlExtractor
@@ -13,35 +12,32 @@ import scala.util.Random
 import edu.knowitall.tool.parse.graph.DependencyGraph
 import edu.knowitall.common.Analysis
 import org.slf4j.LoggerFactory
+import edu.knowitall.tool.stem.MorphaStemmer
 
 object TrainSrlConfidence {
   val logger = LoggerFactory.getLogger(this.getClass)
+
+  case class Settings (
+    var inputFile: File = null,
+    var outputFile: Option[File] = None,
+    var evaluate: Boolean = false,
+    var count: Int = Int.MaxValue
+  )
+
   def main(args: Array[String]) {
-    object settings extends Settings {
-      var inputFile: File = _
-      var outputFile: Option[File] = None
-      var evaluate: Boolean = false
-      var count: Int = Int.MaxValue
+
+    val parser = new scopt.OptionParser[Settings]("scoreextr") {
+      arg[String]("gold") text("gold set") action { (path: String, config) => config.copy(inputFile = new File(path)) }
+      opt[String]('o', "output") text("output file") action { (path: String, config: Settings) => config.copy(outputFile = Some(new File(path))) }
+      opt[Unit]('e', "evaluate") text("evaluate using folds") action { (b, config) => config.copy(evaluate = true) }
+      opt[Int]('c', "count") text("number of sentences to use") action { (i: Int, config) => config.copy(count = i) }
     }
 
-    val parser = new OptionParser("scoreextr") {
-      arg("gold", "gold set", { path: String => settings.inputFile = new File(path) })
-      argOpt("output", "output file", { path: String => settings.outputFile = Some(new File(path)) })
-      opt("e", "evaluate", "evaluate using folds", { settings.evaluate = true})
-      intOpt("c", "count", "number of sentences to use", { (i: Int) => settings.count = i })
-    }
-
-    if (parser.parse(args)) {
-      run(settings)
+    parser.parse(args, Settings()) match {
+      case Some(config) => run(config)
+      case None =>
     }
   }
-
-   abstract class Settings {
-     def inputFile: File
-     def outputFile: Option[File]
-     def evaluate: Boolean
-     def count: Int
-   }
 
   def run(settings: Settings) = {
     lazy val parser = new ClearParser()
@@ -88,7 +84,8 @@ object TrainSrlConfidence {
       logger.info("Extracting sentences.")
       case class Sentence(text: String, insts: Seq[SrlExtractionInstance])
       val extracted = sentences.map { sentence =>
-        val insts = extractor(parser(sentence))
+        val (tokens, graph) = parser(sentence)
+        val insts = extractor(tokens map MorphaStemmer.lemmatizePostaggedToken, graph)
         Sentence(sentence, insts)
       }
 
@@ -132,7 +129,7 @@ object TrainSrlConfidence {
 
       println("Misclassified:")
       sorted.filter(_._2 == false) foreach { case (conf, annotation, ex) =>
-        println(("%2f" format conf) + "\t" + ex.extr + "\t" + ex.dgraph.text)
+        println(("%2f" format conf) + "\t" + ex.extr + "\t" + ex.sentenceText)
       }
 
       /* Charting code does not work with 2.9.3!
@@ -148,7 +145,7 @@ object TrainSrlConfidence {
 
     } else {
       // train a classifier
-      val insts = sentences map parser.apply flatMap extractor.apply
+      val insts = sentences map parser.apply flatMap (extractor.lemmatizeAndApply _).tupled
 
       val classifier = train(gold, insts)
       settings.outputFile match {

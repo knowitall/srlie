@@ -14,22 +14,15 @@ scalaVersion <<= crossScalaVersions { (vs: Seq[String]) => vs.head }
 
 resolvers += "Sonatype SNAPSHOTS" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
-libraryDependencies ++= Seq("edu.washington.cs.knowitall.nlptools" %% "nlptools-srl-clear" % "2.4.4",
-  "edu.washington.cs.knowitall.nlptools" %% "nlptools-conf-breeze" % "2.4.4",
-  "com.github.scopt" %% "scopt" % "2.1.0" cross CrossVersion.binaryMapped {
-      case "2.9.3" => "2.9.2"
-      case "2.10.2" => "2.10"
-      case x => x
-    },
-  "org.slf4j" % "slf4j-api" % "1.7.3",
+libraryDependencies ++= Seq("org.allenai.nlptools" %% "nlptools-srl-clear" % "2.5.0-SNAPSHOT",
+  "org.allenai.nlptools" %% "nlptools-conf-breeze" % "2.5.0-SNAPSHOT",
+  "org.allenai.nlptools" %% "nlptools-stem-morpha" % "2.5.0-SNAPSHOT",
+  "com.github.scopt" %% "scopt" % "3.2.0",
+  "org.slf4j" % "slf4j-api" % "1.7.6",
   "ch.qos.logback" % "logback-classic" % "1.0.13" % "test",
   "ch.qos.logback" % "logback-core" % "1.0.13" % "test",
   "junit" % "junit" % "4.11" % "test",
-    "org.specs2" % "specs2" % "1.12.3" % "test" cross CrossVersion.binaryMapped {
-      case "2.9.3" => "2.9.2"
-      case "2.10.2" => "2.10"
-      case x => x
-    })
+  "org.scalatest" % "scalatest_2.10" % "2.0" % "test")
 
 mainClass in assembly := Some("edu.knowitall.srlie.SrlExtractor")
 

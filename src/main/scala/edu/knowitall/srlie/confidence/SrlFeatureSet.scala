@@ -70,15 +70,15 @@ object SrlFeatures {
   }
   object arg1ContainsPronoun extends SrlFeature("arg1 contains a pronoun or EX") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg1.tokens.exists(tok => tok.isPronoun ||
-        tok.postag == "EX" ||
-        pronoun.extraPronouns.contains(tok.string.toLowerCase))
+      inst.extr.arg1.tokens.exists(node => node.token.isPronoun ||
+        node.token.postag == "EX" ||
+        pronoun.extraPronouns.contains(node.token.string.toLowerCase))
     }
   }
 
   object arg2ContainsPronoun extends SrlFeature("at least one arg2 contains a pronoun or EX") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg2s.exists(_.tokens.exists(tok => tok.isPronoun || tok.postag == "EX" || tok.string.toLowerCase == "ive"))
+      inst.extr.arg2s.exists(_.tokens.exists(node => node.token.isPronoun || node.token.postag == "EX" || node.string.toLowerCase == "ive"))
     }
   }
 
@@ -101,26 +101,26 @@ object SrlFeatures {
 
   object arg1Noun extends SrlFeature("arg1 is noun") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg1.tokens.exists(tok => tok.isNoun || tok.isPronoun)
+      inst.extr.arg1.tokens.exists(node => node.token.isNoun || node.token.isPronoun)
     }
   }
 
   object arg2Noun extends SrlFeature("at least one arg2 is noun") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg2s.exists(_.tokens.exists(tok =>
-        tok.isNoun || tok.isPronoun))
+      inst.extr.arg2s.exists(_.tokens.exists(node =>
+        node.token.isNoun || node.token.isPronoun))
     }
   }
 
   object arg1Proper extends SrlFeature("arg1 is proper") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg1.tokens.exists(_.isProperNoun)
+      inst.extr.arg1.tokens.exists(_.token.isProperNoun)
     }
   }
 
   object arg2Proper extends SrlFeature("at least one arg2 is proper") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg2s.exists(_.tokens.exists(_.isProperNoun))
+      inst.extr.arg2s.exists(_.tokens.exists(_.token.isProperNoun))
     }
   }
 
@@ -150,14 +150,14 @@ object SrlFeatures {
 
   object relContainsVerb extends SrlFeature("rel contains verb") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.relation.tokens exists (_.isVerb)
+      inst.extr.relation.tokens exists (_.token.token.isVerb)
     }
   }
 
   object relContiguous extends SrlFeature("rel contiguous") {
     override def apply(inst: SrlExtractionInstance): Double = {
       inst.extr.relation.span.forall { i =>
-        inst.extr.relation.tokens.exists(tok => tok.tokenInterval contains i)
+        inst.extr.relation.tokens.exists(_.id == i)
       }
     }
   }
