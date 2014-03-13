@@ -4,6 +4,11 @@ import Keys._
 import spray.revolver.RevolverPlugin._
 
 object SrlieBuild extends Build {
+  val logbackVersion = "1.0.13"
+  val logbackCore = "ch.qos.logback" % "logback-core" % logbackVersion
+  val logbackClassic = "ch.qos.logback" % "logback-classic" % logbackVersion
+  val loggingImpls = Seq(logbackCore, logbackClassic)
+
   lazy val root = Project(id = "srlie-root", base = file(".")).settings (
     publish := { },
     publishTo := Some("bogus" at "http://nowhere.com"),

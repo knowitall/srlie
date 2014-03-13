@@ -26,7 +26,7 @@ import java.net.URL
 import scala.io.Source
 import scala.util.control.Exception
 
-object SrlExtractorCli extends App {
+object SrlieCli extends App {
   sealed abstract class OutputFormat
   object OutputFormat {
     def apply(format: String): OutputFormat = {
