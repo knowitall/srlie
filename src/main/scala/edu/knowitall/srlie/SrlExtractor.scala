@@ -8,6 +8,7 @@ import edu.knowitall.common.Resource
 import edu.knowitall.tool.srl.FrameHierarchy
 import edu.knowitall.tool.srl.Frame
 import edu.knowitall.tool.srl.Roles
+import edu.knowitall.tool.srl.RemoteSrl
 import edu.knowitall.srlie.confidence.SrlConfidenceFunction
 import edu.knowitall.srlie.confidence.SrlFeatureSet
 import edu.knowitall.common.Timing
@@ -65,6 +66,7 @@ object SrlExtractor extends App {
     outputFormat: OutputFormat = OutputFormat.Standard,
     gold: Map[String, Boolean] = Map.empty,
     remoteParser: Option[URL] = None,
+    remoteSrl: Option[URL] = None,
     classifierUrl: URL = SrlConfidenceFunction.defaultModelUrl) {
     def source() = {
       inputFile match {
@@ -116,6 +118,9 @@ object SrlExtractor extends App {
       opt[String]('p', "remote-parser") text("URL to parser server") action { (string, config) =>
         config.copy(remoteParser = Some(new URL(string)))
       }
+      opt[String]('s', "remote-srl") text("URL to srl server") action { (string, config) =>
+        config.copy(remoteSrl = Some(new URL(string)))
+      }
       opt[String]('c', "classifier") text("url to classifier model") action { (string, config) =>
         val file = new File(string)
         require(file.exists, "classifier file does not exist: " + file)
@@ -137,7 +142,10 @@ object SrlExtractor extends App {
       case Some(url) => new RemoteDependencyParser(url.toString)
       case None => new ClearParser()
     }
-    val srl = new ClearSrl()
+    val srl = config.remoteSrl match {
+      case Some(url) => new RemoteSrl(url.toString)
+      case None => new ClearSrl()
+    }
     val srlie = new SrlExtractor(srl)
     val conf = SrlConfidenceFunction.fromUrl(SrlFeatureSet, config.classifierUrl)
 
