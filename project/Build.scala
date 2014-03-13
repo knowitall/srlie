@@ -15,7 +15,7 @@ object SrlieBuild extends Build {
     publishLocal := { }
   ).aggregate(core, cli, server)
 
-  val buildSettings = Defaults.defaultSettings ++ ReleaseSettings.defaults ++ Revolver.settings ++
+  val buildSettings = Defaults.defaultSettings ++ Deploy.settings ++ ReleaseSettings.defaults ++ Revolver.settings ++
     Seq(
       organization := "org.allenai.srlie",
       crossScalaVersions := Seq("2.10.3"),
