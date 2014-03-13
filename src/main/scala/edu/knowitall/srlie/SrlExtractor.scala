@@ -16,18 +16,27 @@ import java.io.PrintWriter
 import java.net.URL
 import edu.knowitall.srlie.confidence.SrlFeatureSet
 import edu.knowitall.common.Timing
+import edu.knowitall.tool.stem.MorphaStemmer
+import edu.knowitall.tool.stem.Lemmatized
+import edu.knowitall.tool.postag.PostaggedToken
+import edu.knowitall.tool.parse.DependencyParser
+import edu.knowitall.tool.tokenize.Tokenizer
 
 class SrlExtractor(val srl: Srl = new ClearSrl()) {
-  def apply(dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
-    val frames = srl.apply(dgraph)
-    this.extract(dgraph)(frames)
+  def lemmatizeAndApply(tokens: Seq[PostaggedToken], dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
+    this.apply(tokens map MorphaStemmer.lemmatizePostaggedToken, dgraph)
   }
 
-  def extract(dgraph: DependencyGraph)(frames: Seq[Frame]) = {
+  def apply(tokens: Seq[Lemmatized[PostaggedToken]], dgraph: DependencyGraph): Seq[SrlExtractionInstance] = {
+    val frames = srl.apply(tokens map (_.token), dgraph)
+    this.extract(tokens, dgraph)(frames)
+  }
+
+  def extract(tokens: Seq[Lemmatized[PostaggedToken]], dgraph: DependencyGraph)(frames: Seq[Frame]) = {
     val hierarchy = FrameHierarchy.fromFrames(dgraph, frames).toSeq
     hierarchy.flatMap { hierarchy =>
-      val extrs = SrlExtraction.fromFrameHierarchy(dgraph)(hierarchy)
-      extrs.map { extr => SrlExtractionInstance(extr, hierarchy, dgraph) }
+      val extrs = SrlExtraction.fromFrameHierarchy(tokens, dgraph)(hierarchy)
+      extrs.map { extr => SrlExtractionInstance(extr, Tokenizer.originalText(tokens map (_.token)), hierarchy, dgraph) }
     }
   }
 }
@@ -67,6 +76,11 @@ object SrlExtractor extends App {
         case None => new PrintWriter(System.out)
       }
     }
+  }
+
+  def graphify(parser: DependencyParser)(line: String) = {
+    val (tokens, graph) = parser.dependencyGraph(line)
+    (tokens map MorphaStemmer.lemmatizePostaggedToken, graph)
   }
 
   val argumentParser = new scopt.immutable.OptionParser[Config]("srl-ie") {
@@ -113,32 +127,26 @@ object SrlExtractor extends App {
   }
 
   def run(config: Config) {
+    import scala.concurrent.ExecutionContext.Implicits.global
     val parser = new ClearParser()
     val srl = new ClearSrl()
     val srlie = new SrlExtractor(srl)
     val conf = SrlConfidenceFunction.fromUrl(SrlFeatureSet, config.classifierUrl)
-
-    def graphify(line: String) = {
-      (Exception.catching(classOf[DependencyGraph.SerializationException]) opt DependencyGraph.deserialize(line)) match {
-        case Some(graph) => graph
-        case None => parser.dependencyGraph(line)
-      }
-    }
 
     Resource.using(config.source()) { source =>
       Resource.using(config.writer()) { writer =>
         Timing.timeThen {
           for (line <- source.getLines) {
             try {
-              val graph = graphify(line)
-              val insts = srlie.apply(graph)
+              val (tokens, graph) = graphify(parser)(line)
+              val insts = srlie.apply(tokens, graph)
               val triples = insts.flatMap(_.triplize(true))
 
               if (config.outputFormat == OutputFormat.Standard) {
-                writer.println(graph.serialize)
+                writer.println(DependencyGraph.singlelineStringFormat.write(graph))
                 writer.println()
 
-                val frames = srl(graph)
+                val frames = srl(tokens map (_.token), graph)
                 writer.println("frames:")
                 frames.map(_.serialize) foreach writer.println
                 writer.println()

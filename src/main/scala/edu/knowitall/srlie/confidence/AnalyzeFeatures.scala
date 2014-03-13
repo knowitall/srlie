@@ -23,16 +23,9 @@ object AnalyzeFeatures extends App {
     val conf = SrlConfidenceFunction.loadDefaultClassifier()
     val srlExtractor = new SrlExtractor()
 
-    def graphify(line: String) = {
-      (Exception.catching(classOf[DependencyGraph.SerializationException]) opt DependencyGraph.deserialize(line)) match {
-        case Some(graph) => graph
-        case None => parser.dependencyGraph(line)
-      }
-    }
-
     for (line <- Source.stdin.getLines) {
-      val graph = graphify(line)
-      val extrs = srlExtractor(graph)
+      val (tokens, graph) = SrlExtractor.graphify(parser)(line)
+      val extrs = srlExtractor.apply(tokens, graph)
 
       def printExtraction(inst: SrlExtractionInstance) = {
         println(inst.extr)

@@ -18,6 +18,9 @@ import edu.knowitall.srlie.SrlExtraction._
 import scala.collection.immutable.SortedSet
 import edu.knowitall.tool.tokenize.Token
 import edu.knowitall.tool.tokenize.Tokenizer
+import edu.knowitall.tool.stem.Lemmatized
+import edu.knowitall.tool.postag.PostaggedToken
+import edu.knowitall.tool.parse.graph.TokenDependencyNode
 
 case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument], context: Option[Context], negated: Boolean) {
   def rel = relation
@@ -41,8 +44,8 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
         a1 <- arg2s.find(_.role == Roles.A1).toSeq
         a2 <- arg2s.find(_.role == Roles.A2)
 
-        if a1.tokens.exists(token => token.isNoun || token.isPronoun)
-        if a2.tokens.exists(token => token.isNoun || token.isPronoun)
+        if a1.tokens.exists(node => node.token.isNoun || node.token.isPronoun)
+        if a2.tokens.exists(node => node.token.isNoun || node.token.isPronoun)
 
         a0 = arg1
         if a0.role == Roles.A0
@@ -52,14 +55,14 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
         val arg2s = /* a0New +: */ this.arg2s.filterNot(_ == a1)
 
         val inferred =
-          if (this.rel.tokens.exists(token => token.text == "has" || token.text == "have")) "[been]"
+          if (this.rel.tokens.exists(node => node.string == "has" || node.string == "have")) "[been]"
           else if (arg1.plural) "[were]"
           else "[was]"
 
-        val (before, after) = this.rel.tokens.filter { token =>
-          !beVerbs.contains(token.text)
-        }.span(node => node.postag == "MD" || node.text == "has" || node.text == "have")
-        val text = Iterable(before.iterator.map(_.text), Iterable(inferred), after.iterator.map(_.text)).flatten.mkString(" ")
+        val (before, after) = this.rel.tokens.filter { node =>
+          !beVerbs.contains(node.token.string)
+        }.span(node => node.postag == "MD" || node.string == "has" || node.string == "have")
+        val text = Iterable(before.iterator.map(_.string), Iterable(inferred), after.iterator.map(_.string)).flatten.mkString(" ")
         val rel = new Relation(text, this.rel.sense, this.rel.tokens, this.rel.intervals)
 
         SrlExtraction(rel, a1, arg2s, context, negated)
@@ -86,8 +89,8 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
             if (arg2 == relArg) {
               relation
             } else {
-              val tokens = (relation.tokens ++ relArg.tokens).sortBy(_.tokenInterval)
-              val text = relation.text + " " + relArg.tokens.iterator.map(_.text).mkString(" ")
+              val tokens = (relation.tokens ++ relArg.tokens).sortBy(_.id)
+              val text = relation.text + " " + relArg.tokens.iterator.map(_.string).mkString(" ")
               relation.copy(text = text, tokens = tokens, intervals = relation.intervals :+ relArg.interval)
             }
           new SrlExtraction(rel, this.arg1, Seq(arg2), context, negated)
@@ -115,7 +118,7 @@ case class SrlExtraction(relation: Relation, arg1: Argument, arg2s: Seq[Argument
           Exception.catching(classOf[Exception]).opt(arg2.withoutLeadingPreposition).map { newArg2 =>
             val leadingPreposition = arg2.leadingPrepositionToken.get
             val newRel = extr.rel.copy(
-                text = extr.rel.text + " " + leadingPreposition.text,
+                text = extr.rel.text + " " + leadingPreposition.string,
                 tokens = extr.rel.tokens :+ leadingPreposition,
                 intervals = extr.rel.intervals :+ Interval.singleton(arg2.interval.start)
                 )
@@ -179,13 +182,13 @@ object SrlExtraction {
 
   abstract class Part {
     def text: String
-    def tokens: Seq[DependencyNode]
+    def tokens: Seq[TokenDependencyNode]
 
     def tokenSpan: Interval
 
     require(!text.isEmpty, "Extraction part text may not be empty.")
     require(!tokens.isEmpty, "Extraction part tokens may not be empty.")
-    require(tokens.sorted == tokens)
+    require(tokens.sortBy(_.id) == tokens, "Tokens are not sorted: " + tokens.toList)
   }
 
   abstract class MultiPart extends Part {
@@ -204,11 +207,11 @@ object SrlExtraction {
     def tokenInterval = interval
     def tokenSpan = tokenInterval
     def offsets = Interval.open(
-      this.tokens.head.offsets.start,
-      this.tokens.last.offsets.end)
+      this.tokens.head.token.offsets.start,
+      this.tokens.last.token.offsets.end)
   }
 
-  class Context(val text: String, val tokens: Seq[DependencyNode], val intervals: Seq[Interval]) extends MultiPart {
+  class Context(val text: String, val tokens: Seq[TokenDependencyNode], val intervals: Seq[Interval]) extends MultiPart {
     override def toString = text
 
     def canEqual(that: Any): Boolean = that.isInstanceOf[Context]
@@ -224,23 +227,23 @@ object SrlExtraction {
 
   abstract class Argument extends SinglePart {
     def text: String
-    def tokens: Seq[DependencyNode]
+    def tokens: Seq[TokenDependencyNode]
     def interval: Interval
     def role: Role
 
     override def toString = text
 
-    def plural = tokens.exists { token =>
-      token.isPluralNoun
+    def plural = tokens.exists { node =>
+      node.token.isPluralNoun
     }
 
     def hasLeadingPreposition: Boolean = {
       leadingPrepositionToken.isDefined
     }
 
-    def leadingPrepositionToken: Option[DependencyNode] = {
+    def leadingPrepositionToken: Option[TokenDependencyNode] = {
       tokens.headOption.filter { head =>
-        head.postag == "IN" || head.postag == "TO"
+        head.token.postag == "IN" || head.token.postag == "TO"
       }
     }
 
@@ -256,17 +259,17 @@ object SrlExtraction {
 
   abstract class SemanticArgument extends Argument
 
-  case class SimpleArgument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role) extends Argument {
-    def this(tokens: Seq[DependencyNode], interval: Interval, role: Role) =
-      this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
+  case class SimpleArgument(val text: String, val tokens: Seq[TokenDependencyNode], val interval: Interval, val role: Role) extends Argument {
+    def this(nodes: Seq[TokenDependencyNode], interval: Interval, role: Role) =
+      this(Tokenizer.originalText(nodes map (_.token.token)).trim, nodes, interval, role)
     override def toString = text
   }
 
-  case class TemporalArgument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role)
+  case class TemporalArgument(val text: String, val tokens: Seq[TokenDependencyNode], val interval: Interval, val role: Role)
     extends SemanticArgument {
 
-    def this(tokens: Seq[DependencyNode], interval: Interval, role: Role) =
-      this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
+    def this(nodes: Seq[TokenDependencyNode], interval: Interval, role: Role) =
+      this(Tokenizer.originalText(nodes map (_.token.token)).trim, nodes, interval, role)
 
     override def toString = "T:" + super.toString
 
@@ -280,11 +283,11 @@ object SrlExtraction {
     }
   }
 
-  case class LocationArgument(val text: String, val tokens: Seq[DependencyNode], val interval: Interval, val role: Role)
+  case class LocationArgument(val text: String, val tokens: Seq[TokenDependencyNode], val interval: Interval, val role: Role)
     extends SemanticArgument {
 
-    def this(tokens: Seq[DependencyNode], interval: Interval, role: Role) =
-      this(Tokenizer.originalText(tokens).trim, tokens, interval, role)
+    def this(nodes: Seq[TokenDependencyNode], interval: Interval, role: Role) =
+      this(Tokenizer.originalText(nodes map (_.token.token)).trim, nodes, interval, role)
 
     override def toString = "L:" + super.toString
 
@@ -298,7 +301,7 @@ object SrlExtraction {
     }
   }
 
-  case class Relation(text: String, sense: Option[Sense], tokens: Seq[DependencyNode], intervals: Seq[Interval]) extends MultiPart {
+  case class Relation(text: String, sense: Option[Sense], tokens: Seq[TokenDependencyNode], intervals: Seq[Interval]) extends MultiPart {
     // make sure all the intervals are disjoint
     require(intervals.forall(x => !intervals.exists(y => x != y && (x intersects y))))
 
@@ -323,26 +326,26 @@ object SrlExtraction {
     val expansionLabels = Set("advmod", "neg", "aux", "cop", "auxpass", "prt", "acomp")
   }
 
-  def contiguousAdjacent(graph: DependencyGraph, node: DependencyNode, cond: DirectedEdge[DependencyNode] => Boolean, until: Set[DependencyNode]) = {
-    def takeAdjacent(interval: Interval, nodes: List[DependencyNode], pool: List[DependencyNode]): List[DependencyNode] = pool match {
+  def contiguousAdjacent(graph: Graph[TokenDependencyNode], node: TokenDependencyNode, cond: DirectedEdge[TokenDependencyNode] => Boolean, until: Set[TokenDependencyNode]) = {
+    def takeAdjacent(interval: Interval, nodes: List[TokenDependencyNode], pool: List[TokenDependencyNode]): List[TokenDependencyNode] = pool match {
       // can we add the top node?
-      case head :: tail if (head.indices borders interval) && !until.contains(head) =>
-        takeAdjacent(interval union head.indices, head :: nodes, tail)
+      case head :: tail if (Interval.singleton(head.id) borders interval) && !until.contains(head) =>
+        takeAdjacent(interval union Interval.singleton(head.id), head :: nodes, tail)
       // otherwise abort
       case _ => nodes
     }
 
-    val inferiors = graph.graph.connected(node, dedge => cond(dedge) && !(until contains dedge.end))
-    val span = Interval.span(inferiors.map(_.indices))
-    val contiguous = graph.nodes.drop(span.start).take(span.length).toList.sorted
+    val inferiors = graph.connected(node, dedge => cond(dedge) && !(until contains dedge.end))
+    val span = Interval.span(inferiors map (inf => Interval.singleton(inf.id)))
+    val contiguous = graph.vertices.toList.sortBy(_.id).drop(span.start).take(span.length)
 
     // split into nodes left and right of node
     val lefts = contiguous.takeWhile(_ != node).reverse
     val rights = contiguous.dropWhile(_ != node).drop(1)
 
     // take adjacent nodes from each list
-    val withLefts = takeAdjacent(node.indices, List(node), lefts)
-    val expanded = takeAdjacent(node.indices, withLefts, rights).sortBy(_.indices)
+    val withLefts = takeAdjacent(Interval.singleton(node.id), List(node), lefts)
+    val expanded = takeAdjacent(Interval.singleton(node.id), withLefts, rights).sortBy(_.id)
 
     // only take items that are inferiors
     expanded.slice(expanded.indexWhere(inferiors contains _), 1 + expanded.lastIndexWhere(inferiors contains _))
@@ -354,17 +357,17 @@ object SrlExtraction {
    *  @param  labels  components may be connected by edges with any of these labels
    *  @param  without  components may not include any of these nodes
    */
-  def components(graph: DependencyGraph, node: DependencyNode, labels: Set[String], without: Set[DependencyNode], nested: Boolean) = {
+  def components(graph: Graph[TokenDependencyNode], node: TokenDependencyNode, labels: Set[String], without: Set[TokenDependencyNode], nested: Boolean) = {
     // nodes across an allowed label to a subcomponent
-    val across = graph.graph.neighbors(node, (dedge: DirectedEdge[_]) => dedge.dir match {
+    val across = graph.neighbors(node, (dedge: DirectedEdge[_]) => dedge.dir match {
       case Direction.Down if labels.contains(dedge.edge.label) => true
       case _ => false
     })
 
     across.flatMap { start =>
       // get inferiors without passing back to node
-      val inferiors = graph.graph.inferiors(start,
-        (e: Graph.Edge[DependencyNode]) =>
+      val inferiors = graph.inferiors(start,
+        (e: Graph.Edge[TokenDependencyNode]) =>
           // don't cross a conjunction that goes back an across node
           !((e.label startsWith "conj") && (across contains e.dest)) &&
             // make sure we don't cycle out of the component
@@ -377,15 +380,21 @@ object SrlExtraction {
 
       // make sure none of the without nodes are in the component
       if (without.forall(!inferiors.contains(_))) {
-        val span = Interval.span(inferiors.map(_.indices).toSeq)
-        Some(graph.nodes.filter(node => span.superset(node.indices)).toList)
+        val span = Interval.span(inferiors.map(inf => Interval.singleton(inf.id)).toSeq)
+        Some(graph.vertices.filter(node => span.superset(Interval.singleton(node.id))).toList)
       } else None
     }
   }
 
   val componentEdgeLabels = Set("rcmod", "infmod", "partmod", "ref", "prepc_of", "advcl")
   val forbiddenEdgeLabel = Set("appos", "punct", "cc") ++ componentEdgeLabels
-  def fromFrame(dgraph: DependencyGraph)(frame: Frame): Option[SrlExtraction] = {
+  def fromFrame(graph: Graph[TokenDependencyNode])(frame: Frame): Option[SrlExtraction] = {
+    def tokenNode(node: DependencyNode) = {
+      (graph.vertices find (_.id == node.id)).getOrElse {
+        throw new IllegalArgumentException("Couldn't find node: " + node.id)
+      }
+    }
+
     val argsNotBoundaries = frame.arguments.filterNot { arg =>
       arg.role match {
         case Roles.AM_MNR => true
@@ -400,7 +409,7 @@ object SrlExtraction {
     // context information
     val negated = frame.arguments.find(_.role == Roles.AM_NEG).isDefined
 
-    val boundaries = argsNotBoundaries.map(_.node).toSet + frame.relation.node
+    val boundaries = (argsNotBoundaries.map(_.node).toSet + frame.relation.node) map tokenNode
 
     val args = argsNotBoundaries.filterNot { arg =>
       arg.role match {
@@ -409,16 +418,21 @@ object SrlExtraction {
       }
     }
 
+    implicit def tokenNodeOrdering = new Ordering[TokenDependencyNode] {
+      def compare(a: TokenDependencyNode, b: TokenDependencyNode) = {
+        b.id - a.id
+      }
+    }
     val rel = {
       // sometimes we need detached tokens: "John shouts profanities out loud."
-      val nodes = dgraph.graph.inferiors(frame.relation.node, edge => (Relation.expansionLabels contains edge.label) && !(boundaries contains edge.dest))
+      val nodes = graph.inferiors(tokenNode(frame.relation.node), edge => (Relation.expansionLabels contains edge.label) && !(boundaries contains edge.dest))
       val additionalNodes =
         // sometimes we need to go up a pcomp
-        dgraph.graph.predecessors(frame.relation.node, edge => edge.label == "pcomp" && nodes.exists { node => node.tokenInterval borders edge.source.tokenInterval })
+        graph.predecessors(tokenNode(frame.relation.node), edge => edge.label == "pcomp" && nodes.exists { node => Interval.singleton(node.id) borders Interval.singleton(edge.source.id) })
       val remoteNodes = (
         // expand to certain nodes connected by a conj edge
-        (dgraph.graph.superiors(frame.relation.node, edge => edge.label == "conj") - frame.relation.node) flatMap (node => dgraph.graph.inferiors(node, edge => edge.label == "aux" && edge.dest.text == "to") - node)).filter(_.index < frame.relation.node.index)
-      val nodeSeq = (remoteNodes ++ nodes ++ additionalNodes).toSeq.sorted
+        (graph.superiors(tokenNode(frame.relation.node), edge => edge.label == "conj") - tokenNode(frame.relation.node)) flatMap (node => graph.inferiors(node, edge => edge.label == "aux" && edge.dest.string == "to") - node)).filter(_.id < frame.relation.node.id)
+      val nodeSeq = (remoteNodes ++ nodes ++ additionalNodes).toSeq.sortBy(_.id)
 
       /**
        * create a minimal spanning set of the supplied intervals.
@@ -438,45 +452,46 @@ object SrlExtraction {
         }.reverse
       }
 
-      val intervals = minimal(nodeSeq.map(_.tokenInterval))
-      val text = nodeSeq.iterator.map(_.text).mkString(" ")
+      val intervals = minimal(nodeSeq.map(node => Interval.singleton(node.id)))
+      val text = nodeSeq.iterator.map(_.string).mkString(" ")
       Relation(text, Some(Sense(frame.relation.name, frame.relation.sense)), nodeSeq, intervals)
     }
 
     val mappedArgs = args.map { arg =>
       val immediateNodes =
         // expand along certain contiguous nodes
-        contiguousAdjacent(dgraph, arg.node, dedge => dedge.dir == Direction.Down && !(forbiddenEdgeLabel contains dedge.edge.label), boundaries)
+        contiguousAdjacent(graph, tokenNode(arg.node), dedge => dedge.dir == Direction.Down && !(forbiddenEdgeLabel contains dedge.edge.label), boundaries)
 
-      val componentNodes: Set[List[DependencyNode]] =
-        if (immediateNodes.exists(_.isProperNoun)) Set.empty
-        else components(dgraph, arg.node, componentEdgeLabels, boundaries, false)
+      val componentNodes: Set[List[TokenDependencyNode]] =
+        if (immediateNodes.exists(_.token.isProperNoun)) Set.empty
+        else components(graph, tokenNode(arg.node), componentEdgeLabels, boundaries, false)
 
-      val nodeSpan = Interval.span(immediateNodes.map(_.tokenInterval) ++ componentNodes.map(_.tokenInterval))
-      val nodes = dgraph.nodes.slice(nodeSpan.start, nodeSpan.end)
+      val nodeSpan = Interval.span(immediateNodes.map(node => Interval.singleton(node.id)) ++ componentNodes.flatten.map(node => Interval.singleton(node.id)))
+      val nodes = graph.vertices.toSeq.sortBy(_.id).slice(nodeSpan.start, nodeSpan.end)
 
       val nodeSeq = nodes.toSeq
       arg.role match {
-        case Roles.AM_TMP => new TemporalArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
-        case Roles.AM_LOC => new LocationArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
-        case _ => new SimpleArgument(nodeSeq, Interval.span(nodes.map(_.indices)), arg.role)
+        case Roles.AM_TMP => new TemporalArgument(nodeSeq, Interval.span(nodes map (node => Interval.singleton(node.id))), arg.role)
+        case Roles.AM_LOC => new LocationArgument(nodeSeq, Interval.span(nodes map (node => Interval.singleton(node.id))), arg.role)
+        case _ => new SimpleArgument(nodeSeq, Interval.span(nodes map (node => Interval.singleton(node.id))), arg.role)
       }
     }
 
     Exception.catching(classOf[IllegalArgumentException]) opt SrlExtraction.create(rel, mappedArgs, None, negated)
   }
 
-  def fromFrameHierarchy(dgraph: DependencyGraph)(frameh: FrameHierarchy): Seq[SrlExtraction] = {
+  def fromFrameHierarchy(tokens: Seq[Lemmatized[PostaggedToken]], dgraph: DependencyGraph)(frameh: FrameHierarchy): Seq[SrlExtraction] = {
+    val graph = dgraph.tokenized(tokens)
     def rec(frameh: FrameHierarchy): Seq[SrlExtraction] = {
-      if (frameh.children.isEmpty) SrlExtraction.fromFrame(dgraph)(frameh.frame).toSeq
+      if (frameh.children.isEmpty) SrlExtraction.fromFrame(graph)(frameh.frame).toSeq
       else {
-        SrlExtraction.fromFrame(dgraph)(frameh.frame) match {
+        SrlExtraction.fromFrame(graph)(frameh.frame) match {
           case Some(extr) =>
             val context = {
               extr.context match {
                 case Some(context) =>
                   val intervals = SortedSet.empty[Interval] ++ extr.rel.intervals + extr.arg1.interval
-                  val tokens = (Set.empty[DependencyNode] ++ extr.arg1.tokens ++ extr.rel.tokens).toSeq.sortBy(_.tokenInterval)
+                  val tokens = (Set.empty[TokenDependencyNode] ++ extr.arg1.tokens ++ extr.rel.tokens).toSeq.sortBy(_.id)
                   new Context(tokens.iterator.map(_.string).mkString(" "), tokens, intervals.toSeq)
                 case None =>
                   val intervals = extr.rel.intervals :+ extr.arg1.interval
@@ -489,7 +504,7 @@ object SrlExtraction {
             // triplize to include dobj in rel
             val relation = extr.relationArgument match {
               case Some(arg) if subextrs.forall(_.arg2s.forall(arg2 => !(arg2.interval intersects arg.interval))) &&
-                (arg.interval borders extr.relation.span) => extr.relation.copy(tokens = (arg.tokens ++ extr.relation.tokens).sorted, text = extr.relation.text + " " + arg.text)
+                (arg.interval borders extr.relation.span) => extr.relation.copy(tokens = (arg.tokens ++ extr.relation.tokens).sortBy(_.id), text = extr.relation.text + " " + arg.text)
               case _ => extr.relation
             }
 
@@ -500,7 +515,7 @@ object SrlExtraction {
                     case Some(subcontext) =>
                       val intervals = (context.intervals ++ subcontext.intervals).toSet.toSeq.sorted
                       val tokens = (context.tokens ++ subcontext.tokens).toSet
-                      val sortedToken = tokens.toSeq.sortBy(_.tokenInterval)
+                      val sortedToken = tokens.toSeq.sortBy(_.id)
                       new Context(sortedToken.iterator.map(_.string).mkString(" "), sortedToken, intervals)
                     case None => context
                   }

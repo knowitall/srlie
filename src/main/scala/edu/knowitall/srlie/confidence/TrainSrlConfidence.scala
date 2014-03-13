@@ -13,6 +13,7 @@ import scala.util.Random
 import edu.knowitall.tool.parse.graph.DependencyGraph
 import edu.knowitall.common.Analysis
 import org.slf4j.LoggerFactory
+import edu.knowitall.tool.stem.MorphaStemmer
 
 object TrainSrlConfidence {
   val logger = LoggerFactory.getLogger(this.getClass)
@@ -88,7 +89,8 @@ object TrainSrlConfidence {
       logger.info("Extracting sentences.")
       case class Sentence(text: String, insts: Seq[SrlExtractionInstance])
       val extracted = sentences.map { sentence =>
-        val insts = extractor(parser(sentence))
+        val (tokens, graph) = parser(sentence)
+        val insts = extractor(tokens map MorphaStemmer.lemmatizePostaggedToken, graph)
         Sentence(sentence, insts)
       }
 
@@ -132,7 +134,7 @@ object TrainSrlConfidence {
 
       println("Misclassified:")
       sorted.filter(_._2 == false) foreach { case (conf, annotation, ex) =>
-        println(("%2f" format conf) + "\t" + ex.extr + "\t" + ex.dgraph.text)
+        println(("%2f" format conf) + "\t" + ex.extr + "\t" + ex.sentenceText)
       }
 
       /* Charting code does not work with 2.9.3!
@@ -148,7 +150,7 @@ object TrainSrlConfidence {
 
     } else {
       // train a classifier
-      val insts = sentences map parser.apply flatMap extractor.apply
+      val insts = sentences map parser.apply flatMap (extractor.lemmatizeAndApply _).tupled
 
       val classifier = train(gold, insts)
       settings.outputFile match {
