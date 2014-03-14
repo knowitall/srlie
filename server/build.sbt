@@ -8,4 +8,4 @@ libraryDependencies ++= Seq(
     "io.spray" % "spray-can" % "1.2.0",
     "io.spray" % "spray-routing" % "1.2.0",
     // extractor
-    "edu.washington.cs.knowitall.nlptools" %% "nlptools-parse-clear" % "2.4.4") ++ loggingImpls
+    "org.allenai.nlptools" %% "nlptools-parse-clear" % "2.5.0-SNAPSHOT") ++ loggingImpls

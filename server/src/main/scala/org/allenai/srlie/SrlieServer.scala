@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory
 import spray.http._
 import spray.routing._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext.global
 import scala.util.Try
 
 class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[String]) extends SimpleRoutingApp {
@@ -25,7 +25,7 @@ class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[Str
   val parser = remoteParser match {
     case Some(url) =>
       logger.info("Using remote parser at: " + url)
-      new RemoteDependencyParser(url)
+      new RemoteDependencyParser(url)(global)
     case None =>
       logger.info("Creating new ClearParser.")
       new ClearParser()
@@ -34,7 +34,7 @@ class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[Str
   val srl = remoteSrl match {
     case Some(url) =>
       logger.info("Using remote srl at: " + url)
-      new RemoteSrl(url)
+      new RemoteSrl(url)(global)
     case None =>
       logger.info("Creating new ClearSrl.")
       new ClearSrl()
@@ -72,7 +72,7 @@ class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[Str
                 logger.debug("extrs: " + (insts map (_.extr)))
 
                 // Match extractions with confidence and sort.
-                val extrs = (insts map (inst => (metric(inst), inst.extr))).sortBy(_._1)
+                val extrs = (insts map (inst => (metric(inst), inst.extr))).sortBy(-_._1)
 
                 val formatted = extrs map { case (conf, extr) => f"$conf%.3f $extr" }
                 complete(formatted mkString "\n")
