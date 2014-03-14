@@ -48,6 +48,11 @@ class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[Str
 
     implicit val system = ActorSystem("srlie-server")
 
+    val info = Map(
+        "name" -> "srlie",
+        "description" -> "The primary component of Open IE 4.0."
+      )
+
     startServer(interface = "0.0.0.0", port = port) {
       respondWithHeader(cacheControlMaxAge) {
         path ("") {
@@ -75,9 +80,17 @@ class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[Str
             }
           }
         } ~
-        path ("info" / "name") {
-          get {
-            complete("srlie")
+        path("info") {
+          complete {
+            info.keys mkString "\n"
+          }
+        } ~
+        path("info" / Segment) { key =>
+          complete {
+            info.get(key) match {
+              case Some(key) => key
+              case None => (StatusCodes.NotFound, "Could not find info: " + key)
+            }
           }
         }
       }
