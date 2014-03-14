@@ -1,18 +1,6 @@
-import AssemblyKeys._
-
-assemblySettings
-
 ReleaseSettings.defaults
 
 name := "srlie"
-
-organization := "org.allenai.srlie"
-
-crossScalaVersions := Seq("2.10.3")
-
-scalaVersion <<= crossScalaVersions { (vs: Seq[String]) => vs.head }
-
-resolvers += "Sonatype SNAPSHOTS" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
 libraryDependencies ++= Seq("org.allenai.nlptools" %% "nlptools-srl-clear" % "2.5.0-SNAPSHOT",
   "org.allenai.nlptools" %% "nlptools-conf-breeze" % "2.5.0-SNAPSHOT",
@@ -23,8 +11,6 @@ libraryDependencies ++= Seq("org.allenai.nlptools" %% "nlptools-srl-clear" % "2.
   "ch.qos.logback" % "logback-core" % "1.0.13" % "test",
   "junit" % "junit" % "4.11" % "test",
   "org.scalatest" % "scalatest_2.10" % "2.0" % "test")
-
-mainClass in assembly := Some("edu.knowitall.srlie.SrlExtractor")
 
 scalacOptions ++= Seq("-unchecked", "-deprecation")
 
