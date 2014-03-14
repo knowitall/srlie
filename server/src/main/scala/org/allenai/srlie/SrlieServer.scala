@@ -59,11 +59,18 @@ class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[Str
               srlie.synchronized {
                 logger.info("Processing: " + sentence)
                 val (tokens, dgraph) = parser(sentence)
+
                 logger.debug("dgraph: " + DependencyGraph.singlelineStringFormat.write(dgraph))
+
+                // Run srlie.
                 val insts = srlie(tokens map MorphaStemmer.lemmatizePostaggedToken, dgraph)
-                val extrs = insts map (_.extr)
-                logger.debug("extrs: " + extrs)
-                complete(extrs mkString "\n")
+                logger.debug("extrs: " + (insts map (_.extr)))
+
+                // Match extractions with confidence and sort.
+                val extrs = (insts map (inst => (metric(inst), inst.extr))).sortBy(_._1)
+
+                val formatted = extrs map { case (conf, extr) => f"$conf%.3f $extr" }
+                complete(formatted mkString "\n")
               }
             }
           }
