@@ -15,6 +15,7 @@ import spray.http._
 import spray.routing._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Try
 
 class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[String]) extends SimpleRoutingApp {
   val logger = LoggerFactory.getLogger(this.getClass)
@@ -75,8 +76,8 @@ class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[Str
 object SrlieServerMain extends App {
   val config = ConfigFactory.load().getConfig("srlie.server")
   val port = config.getInt("port")
-  val remoteParser = Option(config.getString("remote.parser"))
-  val remoteSrl = Option(config.getString("remote.srl"))
+  val remoteParser = Try(Option(config.getString("remote.parser"))).toOption.flatten
+  val remoteSrl = Try(Option(config.getString("remote.srl"))).toOption.flatten
 
   val server = new SrlieServer(port, remoteParser, remoteSrl)
   server.run()
