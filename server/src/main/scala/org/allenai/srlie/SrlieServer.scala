@@ -1,5 +1,7 @@
 package org.allenai.srlie
 
+import edu.knowitall.srlie.confidence.SrlConfidenceFunction
+import edu.knowitall.srlie.confidence.SrlFeatureSet
 import edu.knowitall.srlie.SrlExtractor
 import edu.knowitall.tool.parse.ClearParser
 import edu.knowitall.tool.parse.graph.DependencyGraph
@@ -39,6 +41,7 @@ class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[Str
   }
 
   val srlie = new SrlExtractor(srl)
+  val metric = SrlConfidenceFunction.fromUrl(SrlFeatureSet, SrlConfidenceFunction.defaultModelUrl)
 
   def run() {
     val cacheControlMaxAge = HttpHeaders.`Cache-Control`(CacheDirectives.`max-age`(60))
@@ -65,8 +68,10 @@ class SrlieServer(port: Int, remoteParser: Option[String], remoteSrl: Option[Str
             }
           }
         } ~
-        path ("/info/name") {
-          complete("srlie")
+        path ("info" / "name") {
+          get {
+            complete("srlie")
+          }
         }
       }
     }
