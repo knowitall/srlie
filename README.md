@@ -21,4 +21,5 @@ SRLIE is composed of a layer of functions on the input sentence.
 ## Concurrency
 
 When operating at web scale, parallelism is essential.  While the base SRLIE extractor is immutable and
-thread safe, the underlying SRL system provided by ClearNLP is not threadsafe.
+thread safe, the underlying SRL system provided by ClearNLP is not threadsafe.  New versions of ClearNLP
+are reported to be threadsafe.
