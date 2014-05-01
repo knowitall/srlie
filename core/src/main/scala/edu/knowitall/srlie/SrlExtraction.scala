@@ -188,7 +188,6 @@ object SrlExtraction {
 
     require(!text.isEmpty, "Extraction part text may not be empty.")
     require(!tokens.isEmpty, "Extraction part tokens may not be empty.")
-    require(tokens.sortBy(_.id) == tokens, "Tokens are not sorted: " + tokens.toList)
   }
 
   abstract class MultiPart extends Part {
@@ -226,6 +225,8 @@ object SrlExtraction {
   }
 
   abstract class Argument extends SinglePart {
+    require(tokens.sortBy(_.id) == tokens, "Tokens are not sorted: " + tokens.toList)
+
     def text: String
     def tokens: Seq[TokenDependencyNode]
     def interval: Interval
