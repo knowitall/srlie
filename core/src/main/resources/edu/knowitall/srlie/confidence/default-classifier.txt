@@ -1,25 +1,56 @@
-< 2 frame arguments	-0.0019272832009022919
-> 2 frame arguments	-0.01964747984866818
-Intercept	-0.29005959281120436
-all arg2s appear after rel in sentence	-0.29005959281120436
-an arg2 contains > 10 tokens	0.23615570861127455
-arg1 appears before rel in sentence	-0.29005959281120436
-arg1 borders rel	0.08402527703597777
-arg1 contains > 10 tokens	0.04831631993927922
-arg1 contains a pronoun or EX	-0.832169140730415
-arg1 contains bad characters	-0.3321442760314179
-arg1 is blacklisted	-0.6808713332603705
-arg1 is noun	0.9783666488724458
-arg1 is proper	0.15223454538488168
-arg2 borders rel	0.09106994739232609
-arg2 is blacklisted	-0.5035442841858896
-at least one arg2 contains a pronoun or EX	-0.3055059153587756
-at least one arg2 is noun	0.5213110556204072
-at least one arg2 is proper	0.09253822412272641
-hierarchical frames	-0.11113407842599288
-intransitive extraction	-5.306821559439939E-6
+< 2 frame arguments	0.0
+> 2 frame arguments	0.8870780226333741
+active extractor	-1.6223812162642173
+all arg2s appear after rel in sentence	17.56606984092483
+an arg2 contains > 10 tokens	-0.3006845522316616
+arg1 appears before rel in sentence	-4.483993126959759
+arg1 borders rel	1.8994783959905885
+arg1 contains > 10 tokens	0.0
+arg1 contains a pronoun or EX	1.9506472994816124
+arg1 contains bad characters	-0.772756161307035
+arg1 is blacklisted	0.0
+arg1 is noun	2.4605471227874416
+arg1 is proper	1.4736997590557728
+arg2 borders rel	-14.460036696586352
+arg2 is blacklisted	-0.8506900937489096
+at least one arg2 contains a pronoun or EX	-0.472218635963065
+at least one arg2 is noun	0.42275027316039504
+at least one arg2 is proper	0.0
+cognitive words anywhere before arg1	0.0
+communic words anywhere before arg1	2.5709348430139025
+conj right before rel	1.1723085326630323
+hierarchical frames	-0.442643157321315
+if right before arg1	0.1847525432225464
+if|whether|though|although anywhere before arg1	0.0
+in right before arg1	0.0
+Intercept	-4.250667820544373
+intransitive extraction	-18.359527400625268
+may|might|would|could|should|suppose anywhere before arg1	0.0
 nary extraction	0.0
+prep right before arg1	-2.9726355437583556
 rel contains > 10 tokens	0.0
-rel contains bad characters	0.14134262184917817
-rel contains verb	-0.14369028184185362
-rel contiguous	0.21316898408402155
+rel contains bad characters	0.08335058430259866
+rel contains VB	2.4889239771938256
+rel contains VBD	0.0
+rel contains VBG	-1.9286232263035494
+rel contains VBN	-0.4447610988886809
+rel contains VBP	2.062044288193307
+rel contains VBZ	1.7119810235722082
+rel contains verb	0.0
+rel contiguous	2.1086067837576707
+rel ends with for	0.0
+rel ends with in	-1.0339185274645526
+rel ends with of	2.9739243804689126
+rel ends with on	0.0
+rel ends with to	0.5333805581305608
+rel is single verb	1.5844247949592911
+rel matches VW+P	2.3775933142747627
+, right before arg1	4.049964794205353
+sentence contains < 10 tokens	-0.38285098211585616
+sentence contains > 20 tokens	1.608598141795266
+sentence contains > 40 tokens	0.0
+that right after arg2s	-4.46465979613627
+that right before rel	1.4729314578194843
+that|which|who right before arg1	1.7812642439092514
+to right after arg2s	-1.5957445008692277
+who|which right before rel	2.4816384634052318
