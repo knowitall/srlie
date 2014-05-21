@@ -31,7 +31,7 @@ class SrlExtractor(val srl: Srl = new ClearSrl()) {
     val hierarchy = FrameHierarchy.fromFrames(dgraph, frames).toSeq
     hierarchy.flatMap { hierarchy =>
       val extrs = SrlExtraction.fromFrameHierarchy(tokens, dgraph)(hierarchy)
-      extrs.map { extr => SrlExtractionInstance(extr, Tokenizer.originalText(tokens map (_.token)), hierarchy, dgraph) }
+      extrs.map { extr => SrlExtractionInstance(extr, Tokenizer.originalText(tokens map (_.token)), hierarchy, dgraph, tokens) }
     }
   }
 }
