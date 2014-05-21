@@ -82,6 +82,7 @@ object SrlFeatures {
     }
   }
 
+  /* the Arg1 and Arg2 versions are inconsistent here, Arg1 requires all words to be blacklisted */
   object weirdArg {
     val blacklist = Set("that", "those", "ive", "im")
   }
@@ -153,6 +154,20 @@ object SrlFeatures {
       inst.extr.relation.tokens exists (_.token.token.isVerb)
     }
   }
+  
+  object relIsSingleVerb extends SrlFeature("rel is single verb") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      (inst.extr.relation.tokens.length == 1) && inst.extr.relation.tokens.head.token.token.isVerb
+    }
+  }
+  
+  object relStartWithVerbEndsWithPrep extends SrlFeature("rel matches VW+P") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      ((inst.extr.relation.tokens.length > 2) && 
+        inst.extr.relation.tokens.head.token.token.isVerb &&
+        inst.extr.relation.tokens.last.token.token.isPreposition)
+    }
+  }
 
   object relContiguous extends SrlFeature("rel contiguous") {
     override def apply(inst: SrlExtractionInstance): Double = {
@@ -170,7 +185,7 @@ object SrlFeatures {
 
   object longArg1 extends SrlFeature("arg1 contains > 10 tokens") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.extr.arg1.tokens.length
+      inst.extr.arg1.tokens.length >= 10
     }
   }
 
@@ -182,7 +197,7 @@ object SrlFeatures {
 
   object shortSentence extends SrlFeature("sentence contains < 10 tokens") {
     override def apply(inst: SrlExtractionInstance): Double = {
-      inst.dgraph.nodes.size > 20
+      inst.dgraph.nodes.size < 10
     }
   }
 
@@ -195,6 +210,101 @@ object SrlFeatures {
   object longerSentence extends SrlFeature("sentence contains > 40 tokens") {
     override def apply(inst: SrlExtractionInstance): Double = {
       inst.dgraph.nodes.size > 40
+    }
+  }
+    
+  object prepBeforeArg1 extends SrlFeature("prep right before arg1") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      getTokenRightBefore(inst, inst.extr.arg1) match {
+        case Some(token) => token.postag.matches("TO|IN")
+        case None => 0.0
+      }
+    }   
+  }
+  
+  object conjBeforeRel extends SrlFeature("conj right before rel") {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      getTokenRightBefore(inst, inst.extr.rel) match {
+        case Some(t) => t.token.token.isCoordinatingConjunction
+        case None => 0.0
+      }
+    }
+  }
+  
+  def getTokenRightBefore(inst: SrlExtractionInstance, part: Part) = {
+    val tokens = part.tokens
+    if (tokens.size == 0) None
+    else inst.tokenFromId(tokens.head.id - 1)
+  }
+  
+  def getTokenRightAfter(inst: SrlExtractionInstance, part: Part) = {
+    val tokens = part.tokens
+    if (tokens.size == 0) None
+    else inst.tokenFromId(tokens.last.id + 1)
+  }
+  
+  class MatchWordRightBefore(getPart: SrlExtractionInstance => Part, partName: String, word: String) extends SrlFeature(word + " right before " + partName) {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      getTokenRightBefore(inst, getPart(inst)) match {
+        case Some(t) => t.string.toLowerCase.matches(word)
+        case None => 0.0
+      }
+    }  
+  }
+  
+  class MatchWordAnywhereBefore(getPart: SrlExtractionInstance => Part, partName: String, word: String, wordName: String) extends SrlFeature(wordName + " anywhere before " + partName) {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      val t = getPart(inst).tokens
+      if (t.size ==0) false else{
+        val matches = for (i <- 1 to (t.head.id - 1) if (inst.tokenFromId(i) match {
+          case Some(t1) => t1.string.toLowerCase.matches(word)
+          case _ => false
+        })) yield true
+        !matches.isEmpty
+      }
+    }  
+  }
+  
+  class MatchWordRightAfter(partName: String, word: String) extends SrlFeature(word + " right after " + partName) {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      val part = partName match {
+        case "arg1" => Some(inst.extr.arg1)
+        case "rel" => Some(inst.extr.rel)
+        case "arg2s" => {
+          val part2 = inst.extr.arg2s
+          if (part2.size == 0) None else Some(part2.last)
+        }
+        case _ => None
+      }
+      part match {
+        case Some(p) => getTokenRightAfter(inst, p) match {
+          case Some(t) => t.string.toLowerCase.matches(word)
+          case None => 0.0
+        }
+        case None => 0.0
+      }
+    }  
+  }
+  
+  class PartContainsPostag(partName: String, postag: String) extends SrlFeature(partName + " contains " + postag) {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      val tokens = partName match {
+        case "arg1" => Some(inst.extr.arg1.tokens)
+        case "rel" => Some(inst.extr.rel.tokens)
+        case "arg2s" => Some(inst.extr.arg2s.flatMap(_.tokens))
+        case _ => None
+      }
+      tokens match {
+        case Some(t) => t.exists(_.token.token.postag.matches(postag))
+        case None => 0.0
+      }
+    }  
+  }
+  
+  class RelEndsWithWord(word: String) extends SrlFeature("rel ends with " + word) {
+    override def apply(inst: SrlExtractionInstance): Double = {
+      val part = inst.extr.rel.tokens
+      (part.length > 0) && part.last.token.string.matches(word)    
     }
   }
 
@@ -212,10 +322,31 @@ object SrlFeatures {
         0.0
     }
   }
+  
+  /* the following two lists are copied from ReVerb */
+  val comWords = List("acknowledge",
+    "add", "address", "admit", "advertise", "advise", "agree",
+    "allege", "announce", "answer", "appear", "argue", "ask", "assert",
+    "assume", "assure", "believe", "boast", "claim", "comment",
+    "complain", "conclude", "confirm", "consider", "contend",
+    "convince", "decide", "declare", "demand", "demonstrate", "deny",
+    "describe", "determine", "disclose", "discover", "discuss",
+    "doubt", "emphasize", "expect", "explain", "express", "fear",
+    "feel", "figure", "forget", "hear", "hope", "imply", "indicate",
+    "inform", "insist", "instruct", "know", "learn", "maintain",
+    "mean", "mention", "note", "notice", "observe", "pray", "predict",
+    "proclaim", "promise", "propose", "repeat", "reply", "report",
+    "request", "respond", "reveal", "say", "signal", "specify",
+    "speculate", "state", "suggest", "teach", "tell", "testify",
+    "warn", "write")
+    
+  val cogWords = List("estimate",
+    "pretend", "prove", "realise", "realize", "recognize", "remember",
+    "remind", "saw", "seem", "surmise", "suspect", "suspect",
+    "theorize", "think", "understand", "verify", "wish", "worry")
 
   def features: Seq[SrlFeature] = Seq(
-    // context,
-    // activeExtraction,
+    //context,
     hierarchicalFrames,
     fewFrameArguments,
     manyFrameArguments,
@@ -238,11 +369,46 @@ object SrlFeatures {
     longRelation,
     longArg1,
     longArg2,
-    // shortSentence,
-    // longSentence,
-    // longerSentence,
     new BadCharacters(inst => inst.extr.arg1, "arg1"),
-    new BadCharacters(inst => inst.extr.relation, "rel"))
+    new BadCharacters(inst => inst.extr.relation, "rel")
+    
+    //New features added by Oyvind (the first four simply reactivated after bug fix)
+    ,
+    activeExtraction,
+    shortSentence,
+    longSentence,
+    longerSentence,
+    prepBeforeArg1,
+    conjBeforeRel,
+    relIsSingleVerb,
+    relStartWithVerbEndsWithPrep,
+    /* the following classes could be made simpler and more consistent if need be */
+    new MatchWordRightBefore(inst => inst.extr.arg1, "arg1", "if"),
+    new MatchWordRightBefore(inst => inst.extr.arg1, "arg1", "in"),
+    new MatchWordRightBefore(inst => inst.extr.arg1, "arg1", "that|which|who"),
+    new MatchWordRightBefore(inst => inst.extr.arg1, "arg1", ","),
+    new MatchWordAnywhereBefore(inst => inst.extr.arg1, "arg1", "if|whether|though|although", "if|whether|though|although"),
+    new MatchWordAnywhereBefore(inst => inst.extr.arg1, "arg1", "may|might|would|could|should|suppose", "may|might|would|could|should|suppose"),
+    new MatchWordAnywhereBefore(inst => inst.extr.arg1, "arg1", comWords.mkString("|"), "communic words"),
+    new MatchWordAnywhereBefore(inst => inst.extr.arg1, "arg1", cogWords.mkString("|"), "cognitive words"),
+    new MatchWordRightBefore(inst => inst.extr.rel, "rel", "that"),
+    new MatchWordRightBefore(inst => inst.extr.rel, "rel", "who|which"),
+    new MatchWordRightAfter("arg2s", "to"),
+    new MatchWordRightAfter("arg2s", "that"),
+    new PartContainsPostag("rel", "VBZ"),
+    new PartContainsPostag("rel", "VBG"),
+    new PartContainsPostag("rel", "VBD"),
+    new PartContainsPostag("rel", "VBN"),
+    new PartContainsPostag("rel", "VBP"),
+    new PartContainsPostag("rel", "VB"),
+    new RelEndsWithWord("to"),
+    new RelEndsWithWord("in"),
+    new RelEndsWithWord("for"),
+    new RelEndsWithWord("of"),
+    new RelEndsWithWord("on")
+    )
+    
+    
 
   def featureMap: SortedMap[String, SrlFeature] = {
     (for (f <- features) yield (f.name -> Feature.from(f.name, f.apply _)))(scala.collection.breakOut)
