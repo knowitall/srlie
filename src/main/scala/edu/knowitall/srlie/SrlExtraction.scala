@@ -185,7 +185,7 @@ object SrlExtraction {
 
     require(!text.isEmpty, "Extraction part text may not be empty.")
     require(!tokens.isEmpty, "Extraction part tokens may not be empty.")
-    require(tokens.sorted == tokens)
+ //   require(tokens.sorted == tokens)
   }
 
   abstract class MultiPart extends Part {
@@ -300,7 +300,13 @@ object SrlExtraction {
 
   case class Relation(text: String, sense: Option[Sense], tokens: Seq[DependencyNode], intervals: Seq[Interval]) extends MultiPart {
     // make sure all the intervals are disjoint
-    require(intervals.forall(x => !intervals.exists(y => x != y && (x intersects y))))
+    try{
+        require(intervals.forall(x => !intervals.exists(y => x != y && (x intersects y))))
+    }
+    catch{
+	    case e: Exception =>
+            System.out.println("Panic on line: " + text)
+	}
 
     override def toString = text
 
