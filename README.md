@@ -1,6 +1,6 @@
 SRLIE
 =====
-SRLIE is a component of Open IE 4.0 that automatically identifies n-ary extractions from English sentences.
+SRLIE is a component of Open IE 4.x that automatically identifies n-ary extractions from English sentences.
 SRLIE is designed for Web-scale information extraction, where target relations are not specified in advance.
 
 SRLIE constructs richer extractions than OLLIE.  It builds extractions from Semantic Role Labelling (SRL)
@@ -21,4 +21,5 @@ SRLIE is composed of a layer of functions on the input sentence.
 ## Concurrency
 
 When operating at web scale, parallelism is essential.  While the base SRLIE extractor is immutable and
-thread safe, the underlying SRL system provided by ClearNLP is not threadsafe.
+thread safe, the underlying SRL system provided by ClearNLP is not threadsafe. 
+Version 1.0.3 onwards it is thread-safe. Works well with java-7-openjdk.
