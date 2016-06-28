@@ -1,3 +1,5 @@
+** **DEPRECATED!** ** Please see https://github.com/allenai/openie-standalone, which has combined multiple projects into a single project that builds on Scala 2.11.
+
 SRLIE
 =====
 SRLIE is a component of Open IE 4.x that automatically identifies n-ary extractions from English sentences.
