@@ -25,3 +25,7 @@ SRLIE is composed of a layer of functions on the input sentence.
 When operating at web scale, parallelism is essential.  While the base SRLIE extractor is immutable and
 thread safe, the underlying SRL system provided by ClearNLP is not threadsafe. 
 Version 1.0.3 onwards it is thread-safe. Works well with java-7-openjdk.
+
+## Citing SRLIE
+
+Janara Christensen, Mausam, Stephen Soderland, Oren Etzioni. "An Analysis of Open Information Extraction based on Semantic Role Labeling". International Conference on Knowledge Capture (KCAP). Banff, Alberta, Canada. June 2011.
